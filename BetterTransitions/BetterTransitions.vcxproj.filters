@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="nvse">
+      <UniqueIdentifier>{92a4f350-f2ec-4fca-bdd3-927732d91b34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal">
+      <UniqueIdentifier>{97bd151b-5034-401b-8670-08f3c99fee21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared">
+      <UniqueIdentifier>{9acb5579-8300-4a9f-96df-bc16e2d34124}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared\Utils">
+      <UniqueIdentifier>{13cf3b03-96af-4723-be72-e76877f864ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared\SafeWrite">
+      <UniqueIdentifier>{71bbf5b8-d3ff-4ec8-91f6-2c6567970664}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal\Game">
+      <UniqueIdentifier>{91884c69-bac2-4fb2-bbbb-198dbb38567d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal\Game\Gamebryo">
+      <UniqueIdentifier>{5dad0fe0-6588-4473-b702-6ef707392e8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal\Game\Bethesda">
+      <UniqueIdentifier>{14059803-2c71-42d4-88eb-90ca6eece445}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\shared\SafeWrite\SafeWrite.cpp">
+      <Filter>shared\SafeWrite</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\BetterTransitions.cpp">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\FaderManager.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\IOTask.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\IOManager.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\ExteriorCellLoader.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TES.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\PlayerCharacter.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TESObjectCELL.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TESWorldSpace.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TESObjectREFR.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Gamebryo\NiTimeController.cpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Gamebryo\NiControllerManager.cpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Gamebryo\NiObjectNET.cpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Gamebryo\NiObject.cpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Gamebryo\NiAVObject.cpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\BSMemory.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\Actor.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TimeGlobal.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\Defines.hpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\SafeWrite\SafeWrite.hpp">
+      <Filter>shared\SafeWrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\Utils\Bitfield.hpp">
+      <Filter>shared\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\Utils\AddressPtr.hpp">
+      <Filter>shared\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\nvse\nvse\PluginAPI.h">
+      <Filter>nvse</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\BetterTransitions.hpp">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Gamebryo\NiControllerManager.hpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\Fader.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\FaderManager.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\IOTask.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\BSTask.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\IOManager.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\BSTaskManager.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\ExteriorCellLoader.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TES.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\PlayerCharacter.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TESObjectCELL.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TESWorldSpace.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TESObjectREFR.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Gamebryo\NiTimeController.hpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Gamebryo\NiObjectNET.hpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Gamebryo\NiObject.hpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Gamebryo\NiAVObject.hpp">
+      <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\BSMemory.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\Actor.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TimeGlobal.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="internal\Game\Bethesda\BSTask.inl">
+      <Filter>internal\Game\Bethesda</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{AE7CFEE7-4058-4E3C-ADC2-AE7480EE2028}</ProjectGuid>
+    <RootNamespace>BetterTransitions</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>BetterTransitions</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <EnableASAN>false</EnableASAN>
+    <EnableFuzzer>false</EnableFuzzer>
+    <EnableUnitySupport>false</EnableUnitySupport>
+    <UseOfMfc>false</UseOfMfc>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <EnableASAN>false</EnableASAN>
+    <EnableFuzzer>false</EnableFuzzer>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>16.0.28916.169</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(DXSDK_DIR)Lib\x86;$(SolutionDir)Libs\$(Configuration)\</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(DXSDK_DIR)Include</IncludePath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(DXSDK_DIR)Lib\x86;$(SolutionDir)Libs\$(Configuration)\</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(DXSDK_DIR)Include</IncludePath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\nvse;$(SolutionDir)\..\nvse\nvse;internal;internal\Game;internal\Utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GAME;WIN32;NDEBUG;_WINDOWS;_USRDLL;RUNTIME_VERSION=0x040020D0;RUNTIME;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>$(SolutionDir)..\shared\Defines.hpp</ForcedIncludeFiles>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <AdditionalOptions>/Qfast_transcendentals %(AdditionalOptions)</AdditionalOptions>
+      <IntelJCCErratum>true</IntelJCCErratum>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <OmitFramePointers>false</OmitFramePointers>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <CreateHotpatchableImage>false</CreateHotpatchableImage>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+      <ShowProgress>NotSet</ShowProgress>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <Driver>NotSet</Driver>
+      <AdditionalDependencies>d3d9.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\nvse;$(SolutionDir)\..\nvse\nvse;internal;internal\Game;internal\Utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GAME;WIN32;_WINDOWS;_USRDLL;NVSE_PLUGIN_EXAMPLE_EXPORTS;RUNTIME_VERSION=0x040020D0;RUNTIME;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>$(SolutionDir)..\shared\Defines.hpp</ForcedIncludeFiles>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <AdditionalOptions>/Qfast_transcendentals %(AdditionalOptions)</AdditionalOptions>
+      <IntelJCCErratum>false</IntelJCCErratum>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+    </ClCompile>
+    <Link>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>false</OptimizeReferences>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX86</TargetMachine>
+      <ShowProgress>NotSet</ShowProgress>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <AdditionalDependencies>d3d9.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\shared\SafeWrite\SafeWrite.cpp" />
+    <ClCompile Include="internal\BetterTransitions.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\Actor.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\BSMemory.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\ExteriorCellLoader.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\FaderManager.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\IOManager.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\IOTask.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\PlayerCharacter.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\TES.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\TESObjectCELL.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\TESObjectREFR.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\TESWorldSpace.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\TimeGlobal.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiAVObject.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiControllerManager.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiObject.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiObjectNET.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiTimeController.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\nvse\nvse\PluginAPI.h" />
+    <ClInclude Include="..\shared\Defines.hpp" />
+    <ClInclude Include="..\shared\SafeWrite\SafeWrite.hpp" />
+    <ClInclude Include="..\shared\Utils\AddressPtr.hpp" />
+    <ClInclude Include="..\shared\Utils\Bitfield.hpp" />
+    <ClInclude Include="internal\BetterTransitions.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\Actor.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\BSMemory.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\BSTask.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\BSTaskManager.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\ExteriorCellLoader.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\Fader.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\FaderManager.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\IOManager.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\IOTask.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\PlayerCharacter.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\TES.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\TESObjectCELL.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\TESObjectREFR.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\TESWorldSpace.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\TimeGlobal.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiAVObject.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiControllerManager.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiObject.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiObjectNET.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiTimeController.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="internal\Game\Bethesda\BSTask.inl" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\Microsoft.DXSDK.D3DX.9.29.952.8\build\native\Microsoft.DXSDK.D3DX.targets" Condition="Exists('packages\Microsoft.DXSDK.D3DX.9.29.952.8\build\native\Microsoft.DXSDK.D3DX.targets')" />
+    <Import Project="packages\directxmath.2025.4.3.1\build\native\directxmath.targets" Condition="Exists('packages\directxmath.2025.4.3.1\build\native\directxmath.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\Microsoft.DXSDK.D3DX.9.29.952.8\build\native\Microsoft.DXSDK.D3DX.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.DXSDK.D3DX.9.29.952.8\build\native\Microsoft.DXSDK.D3DX.targets'))" />
+    <Error Condition="!Exists('packages\directxmath.2025.4.3.1\build\native\directxmath.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxmath.2025.4.3.1\build\native\directxmath.targets'))" />
+  </Target>
+</Project>
