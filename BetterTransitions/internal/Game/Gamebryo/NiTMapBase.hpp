@@ -46,7 +46,7 @@ public:
     uint32_t GetCount() const { return m_kAllocator.m_uiCount; }
 	bool IsEmpty() const { return m_kAllocator.m_uiCount == 0; }
 
-    bool GetAt(const T_Key key, T_Data& dataOut) const {
+    __forceinline bool GetAt(const T_Key key, T_Data& dataOut) const {
         uint32_t uiHashIndex = KeyToHashIndex(key);
         NiTMapItem<T_Key, T_Data>* pItem = m_ppkHashTable[uiHashIndex];
         while (pItem) {

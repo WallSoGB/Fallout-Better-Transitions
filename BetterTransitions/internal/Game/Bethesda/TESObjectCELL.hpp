@@ -145,6 +145,8 @@ public:
 	bool IsInterior() const { return ucCellFlags.GetBit(INTERIOR); }
 
 	bool LoadAllTempData();
+
+	void QueueReferences(bool abHighPriorityOnly);
 };
 
 ASSERT_SIZE(TESObjectCELL, 0xE0);

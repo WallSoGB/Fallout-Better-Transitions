@@ -18,3 +18,12 @@ void PlayerCharacter::RequestPositionPlayer(PositionRequest* apTargetLoc) {
 bool PlayerCharacter::HandlePositionPlayerRequest() {
 	return ThisCall<bool>(0x93BEA0, this);
 }
+
+// GAME - 0x47AAF0
+void PlayerCharacter::SetPreventActivate(bool abPrevent) {
+	bPreventActivate = abPrevent;
+	if (abPrevent)
+		fPreventActivateTimer = 5.f;
+	else
+		fPreventActivateTimer = 0.f;
+}

@@ -215,10 +215,10 @@ public:
 	float								fOverShoulderFOV;
 	uint32_t							uiNumberTraining;
 	Bitfield8							cControlFlags;
-	bool								bIsWaitingForOpenContainerAnim;
+	bool								bPreventActivate;
 	bool								byte682;
 	bool								byte683;
-	float								fWaitingForContainerOpenAnimPreventActivateTimer;
+	float								fPreventActivateTimer;
 	TESObjectREFR*						pForceActivateRef;
 	BipedAnim*							p1stPersonBipedAnim;
 	Animation*							p1stPersonAnimation;
@@ -364,6 +364,8 @@ public:
 	void RequestPositionPlayer(PositionRequest* apTargetLoc);
 
 	bool HandlePositionPlayerRequest();
+
+	void SetPreventActivate(bool abPrevent);
 };
 
 ASSERT_OFFSET(PlayerCharacter, fLastDropAngleMod, 0x874);

@@ -4,8 +4,8 @@
 #include "NiInterpController.hpp"
 #include "NiTimeController.hpp"
 #include "NiFixedString.hpp"
+#include "NiTextKeyExtraData.hpp"
 
-class NiTextKeyExtraData;
 class NiControllerManager;
 class NiStringPalette;
 class NiBlendInterpolator;
@@ -59,7 +59,7 @@ public:
 	InterpArrayItem*				m_pkInterpArray;
 	IDTag*							m_pkIDTagArray;
 	float							m_fSeqWeight;
-	NiTextKeyExtraData*				m_spTextKeys;
+	NiPointer<NiTextKeyExtraData>	m_spTextKeys;
 	NiTimeController::CycleType		m_eCycleType;
 	float							m_fFrequency;
 	float							m_fBeginKeyTime;

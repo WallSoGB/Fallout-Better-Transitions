@@ -5,10 +5,10 @@
 #include "Gamebryo/NiNode.hpp"
 #include "TESChildCell.hpp"
 #include "TESForm.hpp"
+#include "DoorTeleportData.hpp"
 
 class TESBoundObject;
 class LockData;
-class DoorTeleportData;
 class ExtraScript;
 class Actor;
 class ActorCause;
@@ -154,6 +154,8 @@ public:
 	TESObjectREFR* GetLinkedRef() const;
 
 	TESBoundObject* GetObjectReference() const;
+
+	DoorTeleportData* GetTeleport() const;
 };
 
 ASSERT_SIZE(TESObjectREFR, 0x68);

@@ -171,6 +171,7 @@
     <ClCompile Include="internal\Game\Bethesda\IOManager.cpp" />
     <ClCompile Include="internal\Game\Bethesda\IOTask.cpp" />
     <ClCompile Include="internal\Game\Bethesda\PlayerCharacter.cpp" />
+    <ClCompile Include="internal\Game\Bethesda\ProcessLists.cpp" />
     <ClCompile Include="internal\Game\Bethesda\TES.cpp" />
     <ClCompile Include="internal\Game\Bethesda\TESObjectCELL.cpp" />
     <ClCompile Include="internal\Game\Bethesda\TESObjectREFR.cpp" />
@@ -178,6 +179,9 @@
     <ClCompile Include="internal\Game\Bethesda\TimeGlobal.cpp" />
     <ClCompile Include="internal\Game\Gamebryo\NiAVObject.cpp" />
     <ClCompile Include="internal\Game\Gamebryo\NiControllerManager.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiFixedString.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiGlobalStringTable.cpp" />
+    <ClCompile Include="internal\Game\Gamebryo\NiMemObject.cpp" />
     <ClCompile Include="internal\Game\Gamebryo\NiObject.cpp" />
     <ClCompile Include="internal\Game\Gamebryo\NiObjectNET.cpp" />
     <ClCompile Include="internal\Game\Gamebryo\NiTimeController.cpp" />
@@ -194,12 +198,14 @@
     <ClInclude Include="internal\Game\Bethesda\BSMemory.hpp" />
     <ClInclude Include="internal\Game\Bethesda\BSTask.hpp" />
     <ClInclude Include="internal\Game\Bethesda\BSTaskManager.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\DoorTeleportData.hpp" />
     <ClInclude Include="internal\Game\Bethesda\ExteriorCellLoader.hpp" />
     <ClInclude Include="internal\Game\Bethesda\Fader.hpp" />
     <ClInclude Include="internal\Game\Bethesda\FaderManager.hpp" />
     <ClInclude Include="internal\Game\Bethesda\IOManager.hpp" />
     <ClInclude Include="internal\Game\Bethesda\IOTask.hpp" />
     <ClInclude Include="internal\Game\Bethesda\PlayerCharacter.hpp" />
+    <ClInclude Include="internal\Game\Bethesda\ProcessLists.hpp" />
     <ClInclude Include="internal\Game\Bethesda\TES.hpp" />
     <ClInclude Include="internal\Game\Bethesda\TESObjectCELL.hpp" />
     <ClInclude Include="internal\Game\Bethesda\TESObjectREFR.hpp" />
@@ -207,6 +213,8 @@
     <ClInclude Include="internal\Game\Bethesda\TimeGlobal.hpp" />
     <ClInclude Include="internal\Game\Gamebryo\NiAVObject.hpp" />
     <ClInclude Include="internal\Game\Gamebryo\NiControllerManager.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiFixedString.hpp" />
+    <ClInclude Include="internal\Game\Gamebryo\NiGlobalStringTable.hpp" />
     <ClInclude Include="internal\Game\Gamebryo\NiObject.hpp" />
     <ClInclude Include="internal\Game\Gamebryo\NiObjectNET.hpp" />
     <ClInclude Include="internal\Game\Gamebryo\NiTimeController.hpp" />
