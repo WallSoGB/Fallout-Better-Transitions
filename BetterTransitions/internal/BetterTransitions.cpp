@@ -106,7 +106,7 @@ namespace BetterTransitions {
 	// TODO: check if we can play anims through Bethesda's animation system, without breaking anything
 	namespace Animation {
 		static constexpr char cDoorFadeTextKey[] = "DoorFadeStart";
-		bool bCheckDoorKeyframes = false;
+		float fDoorFadeKeyTime = 0.0f;
 
 		void __fastcall FixSequenceCycle(NiControllerSequence* apSequence) {
 			// If this happens, the sequence is broken and should be fixed by a meshoid...
@@ -117,6 +117,8 @@ namespace BetterTransitions {
 		}
 
 		bool __fastcall HasDoorKeyframes(NiControllerSequence* apSequence) {
+			fDoorFadeKeyTime = 0.f;
+
 			if (!apSequence || !apSequence->m_spTextKeys || !apSequence->m_spTextKeys->m_pKeys)
 				return false;
 
@@ -130,6 +132,7 @@ namespace BetterTransitions {
 					continue;
 
 				if (!_strnicmp(cDoorFadeTextKey, rKey.m_kText, sizeof(cDoorFadeTextKey))) {
+					fDoorFadeKeyTime = rKey.m_fTime;
 					return true;
 				}
 			}
@@ -143,30 +146,10 @@ namespace BetterTransitions {
 			if (fStartTime == -FLT_MAX || fLastScaledTime == -FLT_MAX || fLastScaledTime == fStartTime)
 				return false;
 
-			const uint32_t uiCount = apSequence->m_spTextKeys->m_uiNumKeys;
-			if (!uiCount)
-				return false;
-
-			for (uint32_t i = 0; i < uiCount; ++i) {
-				const NiTextKey& rKey = apSequence->m_spTextKeys->m_pKeys[i];
-				if (!rKey.m_kText)
-					continue;
-
-				float fKeyTime = rKey.m_fTime;
-
-				bool bCheckKey = false;
-				if (fStartTime > fLastScaledTime && (fStartTime < fKeyTime || fLastScaledTime >= fKeyTime))
-					bCheckKey = true;
-				else if (fStartTime <= fKeyTime && fLastScaledTime > fKeyTime)
-					bCheckKey = true;
-
-				if (!bCheckKey)
-					continue;
-
-				if (!_strnicmp(cDoorFadeTextKey, rKey.m_kText, sizeof(cDoorFadeTextKey))) {
-					return true;
-				}
-			}
+			if (fStartTime > fLastScaledTime && (fStartTime < fDoorFadeKeyTime || fLastScaledTime >= fDoorFadeKeyTime))
+				return true;
+			else if (fStartTime <= fDoorFadeKeyTime && fLastScaledTime > fDoorFadeKeyTime)
+				return true;
 
 			return false;
 		}
@@ -191,7 +174,7 @@ namespace BetterTransitions {
 
 			NiControllerSequence* pOpenSequence = pCtrlMgr->GetSequenceByName(*FixedStrings::pOpen);
 			if (pOpenSequence && pOpenSequence->m_eState != NiControllerSequence::AnimState::INACTIVE) [[likely]] {
-				if (bCheckDoorKeyframes) [[unlikely]] {
+				if (fDoorFadeKeyTime > 0.f) [[unlikely]] {
 					return HandleDoorKeyframes(pOpenSequence);
 				}
 				else [[likely]] {
@@ -248,11 +231,9 @@ namespace BetterTransitions {
 					pOpenSequence->m_fFrequency = 0.25f;
 				}
 
-				bCheckDoorKeyframes = HasDoorKeyframes(pOpenSequence);
+				HasDoorKeyframes(pOpenSequence);
 			}
 			else {
-				bCheckDoorKeyframes = false;
-
 				NiUpdateData kData(0.16f, abUpdateControllers);
 
 				if (pOpenSequence->m_eState == NiControllerSequence::AnimState::ANIMATING) {
