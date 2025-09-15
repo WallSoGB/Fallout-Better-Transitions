@@ -47,7 +47,6 @@ namespace BetterTransitions {
 		}
 
 		~FakeGameSetting() {
-			ThisCall(0x404A00, this);
 		}
 
 		void*		__vtable;
