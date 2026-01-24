@@ -25,6 +25,9 @@
     <Filter Include="internal\Game\Bethesda">
       <UniqueIdentifier>{14059803-2c71-42d4-88eb-90ca6eece445}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shared\BSMemory">
+      <UniqueIdentifier>{114e9878-f950-412f-95ed-5ae712be4552}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -76,9 +79,6 @@
     <ClCompile Include="internal\Game\Gamebryo\NiAVObject.cpp">
       <Filter>internal\Game\Gamebryo</Filter>
     </ClCompile>
-    <ClCompile Include="internal\Game\Bethesda\BSMemory.cpp">
-      <Filter>internal\Game\Bethesda</Filter>
-    </ClCompile>
     <ClCompile Include="internal\Game\Bethesda\Actor.cpp">
       <Filter>internal\Game\Bethesda</Filter>
     </ClCompile>
@@ -96,6 +96,15 @@
     </ClCompile>
     <ClCompile Include="internal\Game\Gamebryo\NiGlobalStringTable.cpp">
       <Filter>internal\Game\Gamebryo</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\QueuedFile.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\ModelLoader.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\BSMemory\BSMemory.cpp">
+      <Filter>shared\BSMemory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -168,9 +177,6 @@
     <ClInclude Include="internal\Game\Gamebryo\NiAVObject.hpp">
       <Filter>internal\Game\Gamebryo</Filter>
     </ClInclude>
-    <ClInclude Include="internal\Game\Bethesda\BSMemory.hpp">
-      <Filter>internal\Game\Bethesda</Filter>
-    </ClInclude>
     <ClInclude Include="internal\Game\Bethesda\Actor.hpp">
       <Filter>internal\Game\Bethesda</Filter>
     </ClInclude>
@@ -188,6 +194,15 @@
     </ClInclude>
     <ClInclude Include="internal\Game\Gamebryo\NiFixedString.hpp">
       <Filter>internal\Game\Gamebryo</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\ModelLoader.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\QueuedFile.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\BSMemory\BSMemory.hpp">
+      <Filter>shared\BSMemory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

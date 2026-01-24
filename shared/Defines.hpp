@@ -3,11 +3,8 @@
 #pragma warning(disable: 4100 4201 4244 4324 4389 5054)
 
 #include <d3d9.h>
-#include <d3dx9math.h>
 
-#include <Windows.Foundation.h>
-#include <wrl\wrappers\corewrappers.h>
-#include <wrl\client.h>
+#include <Windows.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <cmath>
@@ -15,7 +12,7 @@
 #include <cassert>
 
 #define JIP_CHANGES 1
-#define USE_DXMATH 1
+#define USE_DXMATH 0
 #define USE_STB_SPRINTF 0
 
 #if USE_STB_SPRINTF
@@ -37,18 +34,7 @@ static const auto our_vsnprintf = vsnprintf;
 #include "SafeWrite/SafeWrite.hpp"
 #include "Utils/AddressPtr.hpp"
 
-using namespace ABI::Windows::Foundation;
-using namespace Microsoft::WRL;
-using namespace Microsoft::WRL::Wrappers;
-
-#define DEBUG_MESSAGES false
-
 constexpr double M_TAU = 6.28318530717958647692;   // tau;
-
-inline void ThrowIfFailed(HRESULT hr) {
-	if (FAILED(hr))
-		throw std::exception();
-}
 
 #ifdef _DEBUG
 class DebugString : public std::string {
@@ -131,4 +117,13 @@ __forceinline T_Ret FastCall(uint32_t _addr, Args ...args) {
 #define FUNCTION_UNKOWN static_assert(false, "Find \"" __FUNCSIG__ "\" in GECK" );
 #define FUNCTION_NOT_IMPLEMENTED static_assert(false, "Implement \"" __FUNCSIG__ "\" in GECK" );
 #endif
+
+#define SPEC_RESTRICT		__declspec(restrict)
+#define SPEC_NOINLINE		__declspec(noinline)
+#define SPEC_INLINE			__forceinline
+#define SPEC_NORETURN		__declspec(noreturn)
+#define SPEC_NOALIAS		__declspec(noalias)
+
+#define _HELPER_COMBINE1(X,Y) X##Y
+#define _HELPER_COMBINE(X,Y) _HELPER_COMBINE1(X,Y)
 #pragma endregion

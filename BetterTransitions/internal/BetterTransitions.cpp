@@ -12,6 +12,7 @@
 #include "Bethesda/GameSettingCollection.hpp"
 #include "Bethesda/TimeGlobal.hpp"
 #include "Bethesda/ProcessLists.hpp"
+#include "Bethesda/ModelLoader.hpp"
 
 #include "Gamebryo/NiControllerManager.hpp"
 #include "Gamebryo/NiControllerSequence.hpp"
@@ -29,7 +30,6 @@ namespace BetterTransitions {
 	bool bLoadingCell = false;
 	bool bLoadingInterior = false;
 	bool bLoadingExterior = false;
-	volatile bool bCellLoaded = false;
 
 	TESObjectREFR* pCurrentDoor;
 
@@ -68,27 +68,53 @@ namespace BetterTransitions {
 	class InteriorCellLoaderTask : public IOTask {
 	public:
 		InteriorCellLoaderTask(TESObjectCELL* apCell) : IOTask(IO_TASK_PRIORITY_CRITICAL) {
-			bCellLoaded = false;
-			if (apCell && apCell->IsInterior())
+			if (apCell && apCell->IsInterior()) {
 				pCell = apCell;
+				spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
+			}
 		}
 		~InteriorCellLoaderTask() {};
 
-		TESObjectCELL* pCell = nullptr;
+		TESObjectCELL*			pCell = nullptr;
+		NiPointer<QueuedFile>	spFiles;
 
 		void Run() override {
-			if (pCell) [[likely]] {
-				pCell->LoadAllTempData();
-				pCell->QueueReferences(false);
+			if (pCell && pCell->LoadAllTempData()) [[likely]] {
+				QueueModels();
 			}
+		}
+
+		void Cancel(BS_TASK_STATE aeState, BSTask<int64_t>* apParent) {
+			if (spFiles)
+				spFiles->Cancel(aeState, apParent);
 		}
 
 		void Finish() override {
 			AddToPostProcessQueue();
 		}
 
-		void PostProcess() override {
-			bCellLoaded = true;
+		bool GetDescription(char* apDescription, size_t aiBufferSize) override {
+			sprintf_s(apDescription, aiBufferSize, "ExteriorCellLoaderTask for cell %s", pCell->GetFormEditorID());
+			return true;
+		}
+
+		bool AreModelsLoaded() const {
+			return spFiles && spFiles->GetAllChildrenFinished();
+		}
+
+	private:
+		void QueueModels() {
+			auto pIter = pCell->kReferences.GetHead();
+			while (pIter && !pIter->IsEmpty()) {
+				TESObjectREFR* pRef = pIter->GetItem();
+				pIter = pIter->GetNext();
+				if (pRef && !pRef->Get3D()) {
+					TESBoundObject* pBase = pRef->GetObjectReference();
+					// Need to double-check the model here, because Bethesda doesn't, and crashes like a dumb bitch
+					if (pBase && ModelLoader::GetSingleton()->GetModelForBoundObject(pBase, pRef))
+						ModelLoader::GetSingleton()->QueueBoundObject(pBase, IO_TASK_PRIORITY_HIGH, spFiles, pRef);
+				}
+			}
 		}
 	};
 
@@ -98,7 +124,7 @@ namespace BetterTransitions {
 
 	static bool IsCellLoaded() {
 		if (bLoadingInterior)
-			return bCellLoaded;
+			return spLoaderTask && spLoaderTask->AreModelsLoaded();
 		else if (bLoadingExterior)
 			return ExteriorCellLoader::GetSingleton()->GetCount() == 0;
 
@@ -259,19 +285,23 @@ namespace BetterTransitions {
 	}
 
 	namespace WorldState {
-		bool bPlayerLocked	= false;
-		bool bAIEnabled		= true;
+		struct _State {
+			bool bPlayerLocked  : 1 = false;
+			bool bAIEnabled		: 1 = true;
+		};
+		_State kState;
+
 
 		void Pause() {
 			{
-				bAIEnabled = ProcessLists::GetSingleton()->bToggleAI;
+				kState.bAIEnabled = ProcessLists::GetSingleton()->bToggleAI;
 
 				// Do not run AI while the door is opening, can break the game
 				ProcessLists::GetSingleton()->bToggleAI = false;
 			}
 
 			{
-				bPlayerLocked = PlayerCharacter::GetSingleton()->bPreventActivate;
+				kState.bPlayerLocked = PlayerCharacter::GetSingleton()->bPreventActivate;
 
 				// Prevent player from activating anything while the door is opening
 				PlayerCharacter::GetSingleton()->SetPreventActivate(true);
@@ -279,9 +309,9 @@ namespace BetterTransitions {
 		}
 
 		void Resume() {
-			ProcessLists::GetSingleton()->bToggleAI = bAIEnabled;
+			ProcessLists::GetSingleton()->bToggleAI = kState.bAIEnabled;
 
-			PlayerCharacter::GetSingleton()->SetPreventActivate(bPlayerLocked);
+			PlayerCharacter::GetSingleton()->SetPreventActivate(kState.bPlayerLocked);
 		}
 	}
 

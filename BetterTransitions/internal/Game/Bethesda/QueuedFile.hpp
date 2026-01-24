@@ -24,6 +24,8 @@ public:
 	NiPointer<QueuedReference>	spParent;
 	QueuedChildren*				pChildren;
 	QueuedParents*				pParents;
+
+	bool GetAllChildrenFinished() const;
 };
 
 ASSERT_SIZE(QueuedFile, 0x28);

@@ -19,7 +19,7 @@ public:
 	virtual void Run() = 0;
 	virtual void Finish() = 0;
 	virtual void Cancel(BS_TASK_STATE aeState, BSTask<T>* apParent);
-	virtual bool GetDescription(const char* apDescription, size_t aiBufferSize);
+	virtual bool GetDescription(char* apDescription, size_t aiBufferSize);
 
 	BSTask*			unk04;
 	uint32_t		uiRefCount;

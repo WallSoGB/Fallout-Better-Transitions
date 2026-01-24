@@ -2,121 +2,121 @@
 
 #include "BSSimpleList.hpp"
 
-template<class T_Data>
-inline BSSimpleList<T_Data>::BSSimpleList() : m_item(0), m_pkNext(nullptr) {
+template<class T>
+inline BSSimpleList<T>::BSSimpleList() : m_item(0), m_pkNext(nullptr) {
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>::BSSimpleList(const T_Data& item) : m_item(item), m_pkNext(nullptr) {
+template<class T>
+inline BSSimpleList<T>::BSSimpleList(const T& arItem) : m_item(arItem), m_pkNext(nullptr) {
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>::BSSimpleList(const T_Data& item, BSSimpleList<T_Data>* apNext) : m_item(item), m_pkNext(apNext) {
+template<class T>
+inline BSSimpleList<T>::BSSimpleList(const T& arItem, BSSimpleList<T>* apNext) : m_item(arItem), m_pkNext(apNext) {
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>::BSSimpleList(const BSSimpleList<T_Data>& arEntry) : m_item(arEntry.m_item), m_pkNext(0) {
+template<class T>
+inline BSSimpleList<T>::BSSimpleList(const BSSimpleList<T>& arEntry) : m_item(arEntry.m_item), m_pkNext(0) {
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>::~BSSimpleList() {
+template<class T>
+inline BSSimpleList<T>::~BSSimpleList() {
 	RemoveAll();
 }
 
-template<class T_Data>
-inline const T_Data BSSimpleList<T_Data>::GetItem() const {
+template<class T>
+inline const T& BSSimpleList<T>::GetItem() const {
 	return m_item;
 }
 
-template<class T_Data>
-inline T_Data BSSimpleList<T_Data>::GetItem() {
+template<class T>
+inline T& BSSimpleList<T>::GetItem() {
 	return m_item;
 }
 
-template<class T_Data>
-inline void BSSimpleList<T_Data>::SetItem(const T_Data& aItem) {
-	m_item = aItem;
+template<class T>
+inline void BSSimpleList<T>::SetItem(const T& arItem) {
+	m_item = arItem;
 }
 
-template<class T_Data>
-inline const BSSimpleList<T_Data>* BSSimpleList<T_Data>::GetNext() const {
+template<class T>
+inline const BSSimpleList<T>* BSSimpleList<T>::GetNext() const {
 	return m_pkNext;
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>* BSSimpleList<T_Data>::GetNext() {
+template<class T>
+inline BSSimpleList<T>* BSSimpleList<T>::GetNext() {
 	return m_pkNext;
 }
 
-template<class T_Data>
-inline void BSSimpleList<T_Data>::SetNext(BSSimpleList<T_Data>* apNext) {
+template<class T>
+inline void BSSimpleList<T>::SetNext(BSSimpleList<T>* apNext) {
 	m_pkNext = apNext;
 }
 
 // GAME - 0x8256D0
-template<class T_Data>
-inline bool BSSimpleList<T_Data>::IsEmpty() const { 
+template<class T>
+inline bool BSSimpleList<T>::IsEmpty() const { 
 	return !m_pkNext && !m_item; 
 }
 
 // GAME - 0x631540
-template<class T_Data>
-inline void BSSimpleList<T_Data>::AddHead(const T_Data& aItem) {
-	if (!aItem)
+template<class T>
+inline void BSSimpleList<T>::AddHead(const T& arItem) {
+	if (!arItem)
 		return;
 
-	BSSimpleList<T_Data>* pHead = GetHead();
+	BSSimpleList<T>* pHead = GetHead();
 
 	if (pHead->GetItem()) {
-		BSSimpleList<T_Data>* pNewEntry = new BSSimpleList<T_Data>(*pHead);
+		BSSimpleList<T>* pNewEntry = new BSSimpleList<T>(*pHead);
 		pNewEntry->SetNext(pHead->GetNext());
 		pHead->SetNext(pNewEntry);
-		pHead->SetItem(aItem);
+		pHead->SetItem(arItem);
 
 	}
 	else {
-		pHead->SetItem(aItem);
+		pHead->SetItem(arItem);
 	}
 }
 
 // GAME - 0xAF25B0, 0x905820, 0xB63BF0
-template<class T_Data>
-inline void BSSimpleList<T_Data>::AddTail(const T_Data& aItem) {
-	if (!aItem)
+template<class T>
+inline void BSSimpleList<T>::AddTail(const T& arItem) {
+	if (!arItem)
 		return;
 
-	BSSimpleList<T_Data>* pTail = GetTail();
+	BSSimpleList<T>* pTail = GetTail();
 
 	if (pTail->GetItem()) {
-		pTail->SetNext(new BSSimpleList<T_Data>(aItem));
+		pTail->SetNext(new BSSimpleList<T>(arItem));
 	}
 	else {
-		pTail->SetItem(aItem);
+		pTail->SetItem(arItem);
 	}
 }
 
 // GAME - 0x5F65D0
-template<class T_Data>
-inline bool BSSimpleList<T_Data>::IsInList(const T_Data& aItem) const {
-	const BSSimpleList<T_Data>* pIter = this;
-	while (pIter && pIter->GetItem() != aItem)
+template<class T>
+inline bool BSSimpleList<T>::IsInList(const T& arItem) const {
+	const BSSimpleList<T>* pIter = this;
+	while (pIter && pIter->GetItem() != arItem)
 		pIter = pIter->GetNext();
 	return pIter != 0;
 }
 
-template<class T_Data>
-inline BSSimpleList<T_Data>* BSSimpleList<T_Data>::GetPos(const T_Data& aItem) const {
-	BSSimpleList<T_Data>* pIter = const_cast<BSSimpleList<T_Data>*>(this);
-	while (pIter && pIter->GetItem() != aItem)
+template<class T>
+inline BSSimpleList<T>* BSSimpleList<T>::GetPos(const T& arItem) const {
+	BSSimpleList<T>* pIter = const_cast<BSSimpleList<T>*>(this);
+	while (pIter && pIter->GetItem() != arItem)
 		pIter = pIter->GetNext();
 	return pIter;
 }
 
 // GAME - 0x5AE380
-template<class T_Data>
-inline uint32_t BSSimpleList<T_Data>::ItemsInList() const {
+template<class T>
+inline uint32_t BSSimpleList<T>::ItemsInList() const {
 	uint32_t uiCount = 0;
-	const BSSimpleList<T_Data>* pIter = this;
+	const BSSimpleList<T>* pIter = this;
 	while (pIter) {
 		if (pIter->GetItem())
 			++uiCount;
@@ -127,10 +127,10 @@ inline uint32_t BSSimpleList<T_Data>::ItemsInList() const {
 }
 
 // GAME - 0xB64EC0
-template<class T_Data>
-inline void BSSimpleList<T_Data>::RemoveAll() {
+template<class T>
+inline void BSSimpleList<T>::RemoveAll() {
 	if (GetNext()) {
-		BSSimpleList<T_Data>* pNext = 0;
+		BSSimpleList<T>* pNext = 0;
 		do {
 			auto pCurrNode = GetNext();
 			pNext = pCurrNode->GetNext();
@@ -143,8 +143,8 @@ inline void BSSimpleList<T_Data>::RemoveAll() {
 }
 
 // GAME - 0xB99730
-template<class T_Data>
-inline void BSSimpleList<T_Data>::RemoveHead() {
+template<class T>
+inline void BSSimpleList<T>::RemoveHead() {
 	auto pNext = GetNext();
 	if (pNext) {
 		SetNext(pNext->GetNext());
@@ -157,11 +157,11 @@ inline void BSSimpleList<T_Data>::RemoveHead() {
 	}
 }
 
-template<class T_Data>
-inline void BSSimpleList<T_Data>::RemoveTail() {
-	BSSimpleList<T_Data>* pTail = GetTail();
+template<class T>
+inline void BSSimpleList<T>::RemoveTail() {
+	BSSimpleList<T>* pTail = GetTail();
 	if (pTail) {
-		BSSimpleList<T_Data>* pIter = this;
+		BSSimpleList<T>* pIter = this;
 		while (pIter->GetNext() != pTail)
 			pIter = pIter->GetNext();
 
@@ -174,15 +174,15 @@ inline void BSSimpleList<T_Data>::RemoveTail() {
 }
 
 // GAME - 0x905330
-template<class T_Data>
-inline void BSSimpleList<T_Data>::Remove(const T_Data& aItem) {
-	if (!aItem || IsEmpty())
+template<class T>
+inline void BSSimpleList<T>::Remove(const T& arItem) {
+	if (!arItem || IsEmpty())
 		return;
 
-	BSSimpleList<T_Data>* pIter = this;
-	BSSimpleList<T_Data>* pPrev = this;
+	BSSimpleList<T>* pIter = this;
+	BSSimpleList<T>* pPrev = this;
 
-	while (pIter && pIter->GetItem() != aItem) {
+	while (pIter && pIter->GetItem() != arItem) {
 		pPrev = pIter;
 		pIter = pIter->GetNext();
 	}
@@ -209,16 +209,16 @@ inline void BSSimpleList<T_Data>::Remove(const T_Data& aItem) {
 	}
 }
 
-template<class T_Data>
-inline void BSSimpleList<T_Data>::InsertSorted(const T_Data& aItem, int32_t(__cdecl* apCompare)(const T_Data& aItem1, const T_Data& aItem2)) {
-	if (!aItem)
+template<class T>
+inline void BSSimpleList<T>::InsertSorted(const T& arItem, int32_t(__cdecl* apCompare)(const T& arItem1, const T& arItem2)) {
+	if (!arItem)
 		return;
 
 	if (!this)
 		return;
 
-	BSSimpleList<T_Data>* pIter = this;
-	BSSimpleList<T_Data>* pPrev = nullptr;
+	BSSimpleList<T>* pIter = this;
+	BSSimpleList<T>* pPrev = nullptr;
 	bool bExit = false;
 
 	while (true) {
@@ -228,16 +228,16 @@ inline void BSSimpleList<T_Data>::InsertSorted(const T_Data& aItem, int32_t(__cd
 		if (!pIter->GetItem())
 			break;
 
-		if (apCompare(aItem, pIter->GetItem()) <= 0) {
+		if (apCompare(arItem, pIter->GetItem()) <= 0) {
 			if (pPrev)
-				pPrev->SetNext(new BSSimpleList<T_Data>(aItem, pIter));
+				pPrev->SetNext(new BSSimpleList<T>(arItem, pIter));
 			else
-				AddHead(aItem);
+				AddHead(arItem);
 			goto EXIT_LOOP;
 		}
 
 		if (!pIter->GetNext()) {
-			pIter->SetNext(new BSSimpleList<T_Data>(aItem));
+			pIter->SetNext(new BSSimpleList<T>(arItem));
 			goto EXIT_LOOP;
 		}
 
@@ -249,7 +249,7 @@ inline void BSSimpleList<T_Data>::InsertSorted(const T_Data& aItem, int32_t(__cd
 			return;
 	}
 
-	pIter->SetItem(aItem);
+	pIter->SetItem(arItem);
 
 EXIT_LOOP:
 	bExit = true;

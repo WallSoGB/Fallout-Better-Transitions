@@ -3,9 +3,9 @@
 #include "BetterTransitions.hpp"
 
 constexpr char const* PLUGIN_NAME = "Better Transitions";
-constexpr uint32_t PLUGIN_VERSION = 110;
+constexpr uint32_t PLUGIN_VERSION = 120;
 
-#include "Bethesda/BSMemory.hpp"
+#include "Shared/BSMemory/BSMemory.hpp"
 BS_ALLOCATORS
 
 

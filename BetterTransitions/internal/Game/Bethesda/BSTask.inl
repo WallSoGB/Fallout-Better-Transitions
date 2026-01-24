@@ -19,6 +19,6 @@ inline void BSTask<T>::Cancel(BS_TASK_STATE aeState, BSTask<T>* apParent) {
 }
 
 template<typename T>
-inline bool BSTask<T>::GetDescription(const char* apDescription, size_t aiBufferSize) {
+inline bool BSTask<T>::GetDescription(char* apDescription, size_t aiBufferSize) {
 	return false;
 }
