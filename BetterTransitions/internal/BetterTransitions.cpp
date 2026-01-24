@@ -18,9 +18,12 @@
 
 namespace BetterTransitions {
 
-#define DOOR_ANIMS 1
 #define PRELOAD_CELLS 1
 #define PLAYER_ANIMS 1
+
+	namespace Settings {
+		bool bAnimateDoors = true;
+	}
 
 	bool bRequestFader = false;
 	bool bLoadingCell = false;
@@ -156,9 +159,9 @@ namespace BetterTransitions {
 		// Handles animation's length and state
 		// Return true if fader should activate
 		bool __fastcall HandleDoorAnim(NiAVObject* apRoot) {
-#if !DOOR_ANIMS
-			return true;
-#endif
+			if (!Settings::bAnimateDoors)
+				return true;
+
 			if (!apRoot) [[unlikely]]
 				return true;
 
@@ -195,9 +198,9 @@ namespace BetterTransitions {
 		}
 
 		void __fastcall PlayDoorAnim(NiAVObject* apRoot, bool abOpen, bool abUpdateControllers = true) {
-#if !DOOR_ANIMS
-			return;
-#endif
+			if (!Settings::bAnimateDoors)
+				return;
+
 			if (!apRoot) [[unlikely]]
 				return;
 
@@ -415,6 +418,16 @@ namespace BetterTransitions {
 			return bResult;
 		}
 	};
+
+	void InitSettings() {
+		char cFilename[MAX_PATH];
+		char cRootDir[MAX_PATH];
+		GetModuleFileNameA(nullptr, cFilename, MAX_PATH);
+		strncpy_s(cRootDir, cFilename, (strlen(cFilename) - 13));
+		char* pLastSlash = (strrchr(cFilename, '\\') + 1);
+		strcpy_s(pLastSlash, cRootDir - pLastSlash, "Data\\nvse\\plugins\\BetterTransitions.ini");
+		Settings::bAnimateDoors = GetPrivateProfileInt("Main", "bAnimateDoors", 1, cFilename);
+	}
 
 	void InitHooks() {
 		ReplaceCallEx(0x798A9D, &PlayerCharacterEx::RequestPositionPlayer);
