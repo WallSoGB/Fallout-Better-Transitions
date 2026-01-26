@@ -21,6 +21,14 @@ public:
 	BSTaskManagerThread<T>**	ppThreads;
 	uint32_t*					pBucketCounts;
 	DWORD						uiBucketCountTotal;
+
+	void CancelTask(BSTask<T>* apTask, void* apTaskOwner) {
+		ThisCall(0x44AC40, this, apTask, apTaskOwner);
+	}
+
+	void WaitForTask(BSTask<T>* apTask) {
+		ThisCall(0x5289B0, this, apTask);
+	}
 };
 
 ASSERT_SIZE(BSTaskManager<int64_t>, 0x5C);

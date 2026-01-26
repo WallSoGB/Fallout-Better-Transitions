@@ -70,36 +70,39 @@ namespace BetterTransitions {
 		InteriorCellLoaderTask(TESObjectCELL* apCell) : IOTask(IO_TASK_PRIORITY_CRITICAL) {
 			if (apCell && apCell->IsInterior()) {
 				pCell = apCell;
-				spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
 			}
 		}
 		~InteriorCellLoaderTask() {};
 
 		TESObjectCELL*			pCell = nullptr;
 		NiPointer<QueuedFile>	spFiles;
+		bool					bLoaded = false;
 
 		void Run() override {
 			if (pCell && pCell->LoadAllTempData()) [[likely]] {
+				spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
 				QueueModels();
 			}
+			bLoaded = true;
 		}
 
-		void Cancel(BS_TASK_STATE aeState, BSTask<int64_t>* apParent) {
+		void Cancel(BS_TASK_STATE aeState, void* apParent) override {
 			if (spFiles)
-				spFiles->Cancel(aeState, apParent);
+				spFiles->Cancel(aeState, this);
 		}
 
 		void Finish() override {
-			AddToPostProcessQueue();
-		}
+			if (AreModelsLoaded() && spFiles)
+				spFiles->CheckFinished();
+		} 
 
 		bool GetDescription(char* apDescription, size_t aiBufferSize) override {
-			sprintf_s(apDescription, aiBufferSize, "ExteriorCellLoaderTask for cell %s", pCell->GetFormEditorID());
+			sprintf_s(apDescription, aiBufferSize, "ExteriorCellLoaderTask for cell %s", pCell ? pCell->GetFormEditorID() : "None");
 			return true;
 		}
 
 		bool AreModelsLoaded() const {
-			return spFiles && spFiles->GetAllChildrenFinished();
+			return spFiles ? spFiles->GetAllChildrenFinished() : bLoaded;
 		}
 
 	private:
@@ -124,7 +127,7 @@ namespace BetterTransitions {
 
 	static bool IsCellLoaded() {
 		if (bLoadingInterior)
-			return spLoaderTask && spLoaderTask->AreModelsLoaded();
+			return spLoaderTask ? (spLoaderTask->eState == BS_TASK_STATE_COMPLETED) : true;
 		else if (bLoadingExterior)
 			return ExteriorCellLoader::GetSingleton()->GetCount() == 0;
 
@@ -223,14 +226,18 @@ namespace BetterTransitions {
 			return true;
 		}
 
-		void __fastcall PlayDoorAnim(NiAVObject* apRoot, bool abOpen, bool abUpdateControllers = true) {
+		void __fastcall PlayDoorAnim(TESObjectREFR* apRef, bool abOpen) {
 			if (!Settings::bAnimateDoors)
 				return;
 
-			if (!apRoot) [[unlikely]]
+			if (!apRef) [[unlikely]]
 				return;
 
-			NiControllerManager* pCtrlMgr = apRoot->GetController<NiControllerManager>();
+			NiAVObject* pRoot = apRef->Get3D();
+			if (!pRoot) [[unlikely]]
+				return;
+
+			NiControllerManager* pCtrlMgr = pRoot->GetController<NiControllerManager>();
 			if (!pCtrlMgr) [[unlikely]]
 				return;
 
@@ -240,12 +247,13 @@ namespace BetterTransitions {
 
 			NiControllerSequence* pCloseSequence = pCtrlMgr->GetSequenceByName(*FixedStrings::pClose);
 
+			FixSequenceCycle(pOpenSequence);
+			FixSequenceCycle(pCloseSequence);
+
 			if (abOpen) {
 				// If the close anim is still playing, don't even bother playing the open one
 				if (pCloseSequence && pCloseSequence->m_eState != NiControllerSequence::AnimState::INACTIVE) [[unlikely]]
 					return;
-
-				FixSequenceCycle(pOpenSequence);
 
 				pCtrlMgr->SetActive(true);
 				pCtrlMgr->ActivateSequence(pOpenSequence, 0, true, 1.f, 0.f, nullptr);
@@ -262,32 +270,24 @@ namespace BetterTransitions {
 				HasDoorKeyframes(pOpenSequence);
 			}
 			else {
-				NiUpdateData kData(0.16f, abUpdateControllers);
-
-				if (pOpenSequence->m_eState == NiControllerSequence::AnimState::ANIMATING) {
-					pCtrlMgr->DeactivateSequence(pOpenSequence, 0.f);
-					pOpenSequence->m_fFrequency = 1.f;
-
-					apRoot->Update(kData);
-				}
-
-				if (!pCloseSequence) [[unlikely]]
-					return;
-
-				FixSequenceCycle(pCloseSequence);
-
+				pOpenSequence->m_fFrequency = 1.f;
 				pCtrlMgr->SetActive(true);
-				pCtrlMgr->ActivateSequence(pCloseSequence, 0, true, 1.f, 0.f, nullptr);
-
-				apRoot->Update(kData);
+				pCtrlMgr->DeactivateSequence(pCloseSequence, 0.f);
+				pCtrlMgr->ActivateSequence(pOpenSequence, 0, false, 1.f, 0.f, nullptr);
+				pOpenSequence->m_fOffset = -FLT_MAX;
+				NiUpdateData kUpdateData(pOpenSequence->m_fBeginKeyTime, true, false);
+				pRoot->Update(kUpdateData);
+				pCtrlMgr->DeactivateSequence(pOpenSequence, 0.f);
+				CdeclCall(0xC6BD00, pRoot, true);
 			}
 		}
 	}
 
 	namespace WorldState {
 		struct _State {
-			bool bPlayerLocked  : 1 = false;
-			bool bAIEnabled		: 1 = true;
+			bool bPlayerLocked		: 1 = false;
+			bool bAIEnabled			: 1 = true;
+			bool bCollisionEnabled	: 1 = true;
 		};
 		_State kState;
 
@@ -315,65 +315,74 @@ namespace BetterTransitions {
 		}
 	}
 
-	class PlayerCharacterEx : public PlayerCharacter {
+	void OnRequest(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc) {
+		WorldState::Pause();
+
+		bLoadingCell = true;
+		bRequestFader = true;
+
+		pCurrentDoor = apDoor;
+
+		// We are going to enter a new cell, let's open the current door
+		if (pCurrentDoor) [[likely]] {
+			Animation::PlayDoorAnim(pCurrentDoor, true);
+		}
+
+#if PRELOAD_CELLS
+		// Load cell on an async thread
+		if (apTargetLoc->pCell && apTargetLoc->pCell->IsInterior()) {
+			if (!TES::GetSingleton()->IsCellLoaded(apTargetLoc->pCell, false)) {
+				bLoadingInterior = true;
+				spLoaderTask = new InteriorCellLoaderTask(apTargetLoc->pCell);
+				IOManager::GetSingleton()->AddTask(spLoaderTask);
+			}
+		}
+		else if (apTargetLoc->pFastTravelRef) {
+			ExteriorCellLoader* pLoader = ExteriorCellLoader::GetSingleton();
+			const uint32_t uiQueuedCellsOrg = pLoader->QueuedCellCount();
+			TESObjectREFR* pRef = apTargetLoc->pFastTravelRef->GetLinkedRef();
+			if (!pRef)
+				pRef = apTargetLoc->pFastTravelRef;
+
+			TESWorldSpace* pWorldSpace = pRef->GetWorldSpace();
+			const NiPoint3 kRefPos = pRef->GetPos();
+
+			if (pWorldSpace) {
+				TESObjectCELL* pCell = pWorldSpace->GetCellAtPos(kRefPos);
+				if (!pCell || !TES::GetSingleton()->IsCellLoaded(pCell, false)) {
+					int32_t iCellX = int32_t(kRefPos.x) >> 12;
+					int32_t iCellY = int32_t(kRefPos.y) >> 12;
+					for (int32_t iX = iCellX - 2; iX < iCellX + 2; iX++) {
+						for (int32_t iY = iCellY - 2; iY < iCellY + 2; iY++) {
+							ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
+						}
+					}
+				}
+
+				bLoadingExterior = uiQueuedCellsOrg != pLoader->QueuedCellCount();
+			}
+		}
+#endif
+	}
+
+	CallDetour kOrgRequestPositionPlayer[2];
+	CallDetour kOrgHandlePositionPlayer;
+	CallDetour kOrgCanRenderBackground;
+	CallDetour kOrgCanRenderWorld;
+	class Hook {
 	public:
 		// Runs on demand
-		void RequestPositionPlayer(PositionRequest* apTargetLoc) {
+		template<uint32_t INDEX>
+		void RequestPositionPlayer(PlayerCharacter::PositionRequest* apTargetLoc) {
 			TESObjectREFR* pUsedDoor = static_cast<TESObjectREFR*>(apTargetLoc->pCallbackFuncArg);
 
 			// Should not happen, but just in case
 			if (pUsedDoor && pUsedDoor == pCurrentDoor)
 				return;
 
-			WorldState::Pause();
+			OnRequest(pUsedDoor, apTargetLoc);
 
-			bLoadingCell  = true;
-			bRequestFader = true;
-
-			pCurrentDoor = pUsedDoor;
-
-			// We are going to enter a new cell, let's open the current door
-			if (pCurrentDoor) [[likely]] {
-				Animation::PlayDoorAnim(pCurrentDoor->DirectGet3D(), true);
-			}
-
-#if PRELOAD_CELLS
-			// Load cell on an async thread
-			if (apTargetLoc->pCell && apTargetLoc->pCell->IsInterior()) {
-				if (!TES::GetSingleton()->IsCellLoaded(apTargetLoc->pCell, false)) {
-					bLoadingInterior = true;
-					spLoaderTask = new InteriorCellLoaderTask(apTargetLoc->pCell);
-					IOManager::GetSingleton()->AddTask(spLoaderTask);
-				}
-			}
-			else if (apTargetLoc->pFastTravelRef) {
-				ExteriorCellLoader* pLoader = ExteriorCellLoader::GetSingleton();
-				const uint32_t uiQueuedCellsOrg = pLoader->QueuedCellCount();
-				TESObjectREFR* pRef = apTargetLoc->pFastTravelRef->GetLinkedRef();
-				if (!pRef)
-					pRef = apTargetLoc->pFastTravelRef;
-
-				TESWorldSpace* pWorldSpace = pRef->GetWorldSpace();
-				const NiPoint3 kRefPos = pRef->GetPos();
-
-				if (pWorldSpace) {
-					TESObjectCELL* pCell = pWorldSpace->GetCellAtPos(kRefPos);
-					if (!pCell || !TES::GetSingleton()->IsCellLoaded(pCell, false)) {
-						int32_t iCellX = int32_t(kRefPos.x) >> 12;
-						int32_t iCellY = int32_t(kRefPos.y) >> 12;
-						for (int32_t iX = iCellX - 2; iX < iCellX + 2; iX++) {
-							for (int32_t iY = iCellY - 2; iY < iCellY + 2; iY++) {
-								ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
-							}
-						}
-					}
-
-					bLoadingExterior = uiQueuedCellsOrg != pLoader->QueuedCellCount();
-				}
-			}
-#endif
-
-			PlayerCharacter::RequestPositionPlayer(apTargetLoc);
+			ThisCall(kOrgRequestPositionPlayer[INDEX].GetOverwrittenAddr(), this, apTargetLoc);
 		}
 
 		// Runs every frame
@@ -385,27 +394,29 @@ namespace BetterTransitions {
 					bStartFaderReally = true;
 
 				if (bRequestFader && bStartFaderReally) {
-					FaderManager::GetSingleton()->CreateFader(FADER_TYPE_ABOVE_MENU, fDoorFadeToBlackFadeSeconds.Float(), false);
+					FaderManager::GetSingleton()->CreateFader(FADER_TYPE_ABOVE_MENU, fDoorFadeToBlackFadeSeconds.Float(),  false);
 					bRequestFader = false;
 				}
 
-				bool bFaderFinished = FaderManager::GetSingleton()->IsFaderVisible(FADER_TYPE_ABOVE_MENU);
-				if (bFaderFinished && IsCellLoaded()) {
-					ExteriorCellLoader::GetSingleton()->WaitForTasks();
+				const bool bFaderFinished = FaderManager::GetSingleton()->IsFaderVisible(FADER_TYPE_ABOVE_MENU);
+				if (IsCellLoaded() && bFaderFinished) {
+					if (spLoaderTask) {
+						IOManager::GetSingleton()->CancelTask(spLoaderTask, nullptr);
+						spLoaderTask = nullptr;
+					}
 
-					spLoaderTask = nullptr;
+					ExteriorCellLoader::GetSingleton()->WaitForTasks();
 
 					TESObjectREFR* pTargetDoor = nullptr;
 
 					// Close door we just used
 					if (pCurrentDoor) [[likely]] {
-						Animation::PlayDoorAnim(pCurrentDoor->DirectGet3D(), false);
+						Animation::PlayDoorAnim(pCurrentDoor, false);
 					
 						DoorTeleportData* pTeleport = pCurrentDoor->GetTeleport();
 					
-						if (pTeleport) [[likely]] {
+						if (pTeleport)
 							pTargetDoor = pTeleport->pLinkedDoor;
-						}
 					}
 
 					pCurrentDoor = nullptr;
@@ -413,14 +424,14 @@ namespace BetterTransitions {
 					WorldState::Resume();
 
 					// Load the cell
-					bResult = PlayerCharacter::HandlePositionPlayerRequest();
-
-					TES::GetSingleton()->UpdateFadeNodesForAttachedCells();
+					bResult = ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), this);
 
 					// Close the door we just teleported to
 					if (pTargetDoor) [[likely]] {
-						Animation::PlayDoorAnim(pTargetDoor->Get3D(), false);
+						Animation::PlayDoorAnim(pTargetDoor, false);
 					}
+
+					TES::GetSingleton()->UpdateFadeNodesForAttachedCells();
 
 					bLoadingInterior = false;
 					bLoadingExterior = false;
@@ -428,21 +439,22 @@ namespace BetterTransitions {
 				}
 				else {
 #if PLAYER_ANIMS
+					PlayerCharacter* pThis = reinterpret_cast<PlayerCharacter*>(this);
 					// Fader is ongoing, update player anims
 					const float fDelta = TimeGlobal::GetSingleton()->fDelta;
-					UpdateAnimation();
-					b3rdPerson = !b3rdPerson;
+					pThis->UpdateAnimation();
+					pThis->b3rdPerson = !pThis->b3rdPerson;
 					ThisCall(0x8D3550, this, fDelta); // Character::Update
-					UpdateAnimationMovement(GetPlayerAnimation(!b3rdPerson), 0.f);
-					b3rdPerson = !b3rdPerson;
+					pThis->UpdateAnimationMovement(pThis->GetPlayerAnimation(!pThis->b3rdPerson), 0.f);
+					pThis->b3rdPerson = !pThis->b3rdPerson;
 					ThisCall(0x8D3550, this, fDelta); // Character::Update
-					UpdateAnimationMovement(GetPlayerAnimation(!b3rdPerson), 0.f);
+					pThis->UpdateAnimationMovement(pThis->GetPlayerAnimation(!pThis->b3rdPerson), 0.f);
 #endif
 					bResult = true;
 				}
 			}
 			else {
-				bResult = PlayerCharacter::HandlePositionPlayerRequest();
+				bResult = ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), this);
 			}
 
 			return bResult;
@@ -460,9 +472,9 @@ namespace BetterTransitions {
 	}
 
 	void InitHooks() {
-		ReplaceCallEx(0x798A9D, &PlayerCharacterEx::RequestPositionPlayer);
-		ReplaceCallEx(0x518CA7, &PlayerCharacterEx::RequestPositionPlayer);
-		ReplaceCallEx(0x86F94F, &PlayerCharacterEx::HandlePositionPlayerRequest);
+		kOrgRequestPositionPlayer[0].ReplaceCallEx(0x798A9D, &Hook::RequestPositionPlayer<0>);
+		kOrgRequestPositionPlayer[1].ReplaceCallEx(0x518CA7, &Hook::RequestPositionPlayer<1>);
+		kOrgHandlePositionPlayer.ReplaceCallEx(0x86F94F, &Hook::HandlePositionPlayerRequest);
 
 		fDoorFadeToBlackFadeSeconds.Initialize("fDoorFadeToBlackFadeSeconds", 0.2f);
 	}

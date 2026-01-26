@@ -18,15 +18,12 @@ public:
 	virtual ~BSTask();
 	virtual void Run() = 0;
 	virtual void Finish() = 0;
-	virtual void Cancel(BS_TASK_STATE aeState, BSTask<T>* apParent);
+	virtual void Cancel(BS_TASK_STATE aeState, void* apParent);
 	virtual bool GetDescription(char* apDescription, size_t aiBufferSize);
 
-	BSTask*			unk04;
-	uint32_t		uiRefCount;
-	BS_TASK_STATE	eState;
-#pragma pack(push, 4)
-	mutable T		iKey;
-#pragma pack(pop)
+	volatile uint32_t	uiRefCount;
+	BS_TASK_STATE		eState;
+	mutable T			iKey;
 
 	static constexpr AddressPtr<uint32_t, 0x11C3B38> uiTotalTaskCount;
 

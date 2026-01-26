@@ -15,7 +15,7 @@ inline BSTask<T>::~BSTask() {
 }
 
 template<typename T>
-inline void BSTask<T>::Cancel(BS_TASK_STATE aeState, BSTask<T>* apParent) {
+inline void BSTask<T>::Cancel(BS_TASK_STATE aeState, void* apParent) {
 }
 
 template<typename T>

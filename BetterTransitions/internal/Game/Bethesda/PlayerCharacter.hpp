@@ -361,10 +361,6 @@ public:
 
 	Animation* GetPlayerAnimation(bool abFirstPerson) const;
 
-	void RequestPositionPlayer(PositionRequest* apTargetLoc);
-
-	bool HandlePositionPlayerRequest();
-
 	void SetPreventActivate(bool abPrevent);
 };
 
