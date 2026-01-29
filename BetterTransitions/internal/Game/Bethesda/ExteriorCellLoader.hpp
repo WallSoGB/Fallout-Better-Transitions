@@ -17,7 +17,7 @@ public:
 	void QueueCellLoad(TESWorldSpace* apWorld, int32_t aiCellX, int32_t aiCellY);
 
 	void PostProcessCompletedTasks();
-
+	uint32_t TryCancelTasks();
 	void WaitForTasks();
 };
 

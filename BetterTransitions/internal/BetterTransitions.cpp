@@ -22,122 +22,52 @@ namespace BetterTransitions {
 #define PRELOAD_CELLS 1
 #define PLAYER_ANIMS 1
 
+	CallDetour kOrgRequestPositionPlayer[2];
+	CallDetour kOrgHandlePositionPlayer;
+
 	namespace Settings {
-		bool bAnimateDoors = true;
-	}
+		class CustomGameSetting {
+		public:
+			union Info {
+				const char* str;
+				int				i;
+				unsigned int	u;
+				float			f;
+				bool			b;
+				char			c;
+				char			h;
+			};
 
-	bool bRequestFader = false;
-	bool bLoadingCell = false;
-	bool bLoadingInterior = false;
-	bool bLoadingExterior = false;
+			CustomGameSetting() {
+				memset(this, 0, sizeof(CustomGameSetting));
+			}
 
-	TESObjectREFR* pCurrentDoor;
+			~CustomGameSetting() {
+			}
 
-	class FakeGameSetting {
-	public:
-		union Info {
-			const char* str;
-			int				i;
-			unsigned int	u;
-			float			f;
-			bool			b;
-			char			c;
-			char			h;
+			void* __vtable;
+			Info		uValue;
+			const char* pKey;
+
+			void Initialize(const char* apName, float afValue) {
+				ThisCall(0x40E0B0, this, apName, afValue);
+			}
+
+			float Float() const {
+				return uValue.f;
+			}
 		};
 
-		FakeGameSetting() {
-			memset(this, 0, sizeof(FakeGameSetting));
-		}
-
-		~FakeGameSetting() {
-		}
-
-		void*		__vtable;
-		Info		uValue;
-		const char* pKey;
-
-		void Initialize(const char* apName, float afValue) {
-			ThisCall(0x40E0B0, this, apName, afValue);
-		}
-
-		float Float() const {
-			return uValue.f;
-		}
-	};
-
-	class InteriorCellLoaderTask : public IOTask {
-	public:
-		InteriorCellLoaderTask(TESObjectCELL* apCell) : IOTask(IO_TASK_PRIORITY_CRITICAL) {
-			if (apCell && apCell->IsInterior()) {
-				pCell = apCell;
-			}
-		}
-		~InteriorCellLoaderTask() {};
-
-		TESObjectCELL*			pCell = nullptr;
-		NiPointer<QueuedFile>	spFiles;
-		bool					bLoaded = false;
-
-		void Run() override {
-			if (pCell && pCell->LoadAllTempData()) [[likely]] {
-				spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
-				QueueModels();
-			}
-			bLoaded = true;
-		}
-
-		void Cancel(BS_TASK_STATE aeState, void* apParent) override {
-			if (spFiles)
-				spFiles->Cancel(aeState, this);
-		}
-
-		void Finish() override {
-			if (AreModelsLoaded() && spFiles)
-				spFiles->CheckFinished();
-		} 
-
-		bool GetDescription(char* apDescription, size_t aiBufferSize) override {
-			sprintf_s(apDescription, aiBufferSize, "ExteriorCellLoaderTask for cell %s", pCell ? pCell->GetFormEditorID() : "None");
-			return true;
-		}
-
-		bool AreModelsLoaded() const {
-			return spFiles ? spFiles->GetAllChildrenFinished() : bLoaded;
-		}
-
-	private:
-		void QueueModels() {
-			auto pIter = pCell->kReferences.GetHead();
-			while (pIter && !pIter->IsEmpty()) {
-				TESObjectREFR* pRef = pIter->GetItem();
-				pIter = pIter->GetNext();
-				if (pRef && !pRef->Get3D()) {
-					TESBoundObject* pBase = pRef->GetObjectReference();
-					// Need to double-check the model here, because Bethesda doesn't, and crashes like a dumb bitch
-					if (pBase && ModelLoader::GetSingleton()->GetModelForBoundObject(pBase, pRef))
-						ModelLoader::GetSingleton()->QueueBoundObject(pBase, IO_TASK_PRIORITY_HIGH, spFiles, pRef);
-				}
-			}
-		}
-	};
-
-	NiPointer<InteriorCellLoaderTask> spLoaderTask;
-
-	FakeGameSetting fDoorFadeToBlackFadeSeconds;
-
-	static bool IsCellLoaded() {
-		if (bLoadingInterior)
-			return spLoaderTask ? (spLoaderTask->eState == BS_TASK_STATE_COMPLETED) : true;
-		else if (bLoadingExterior)
-			return ExteriorCellLoader::GetSingleton()->GetCount() == 0;
-
-		return true;
+		bool bAnimateDoors = true;
+		CustomGameSetting fDoorFadeToBlackFadeSeconds;
+		CustomGameSetting fFastTravelFadeToBlackFadeSeconds;
 	}
 
 	// TODO: check if we can play anims through Bethesda's animation system, without breaking anything
 	namespace Animation {
 		static constexpr char cDoorFadeTextKey[] = "DoorFadeStart";
 		float fDoorFadeKeyTime = 0.0f;
+		NiControllerSequence* pCurrentOpenSequence = nullptr;
 
 		void __fastcall FixSequenceCycle(NiControllerSequence* apSequence) {
 			// If this happens, the sequence is broken and should be fixed by a meshoid...
@@ -210,7 +140,7 @@ namespace BetterTransitions {
 				}
 				else [[likely]] {
 					float fProgress = pOpenSequence->m_fLastScaledTime / pOpenSequence->m_fEndKeyTime;
-					
+
 					// Stop the anim before it hits a wall, or shows void. Hopefully.
 					if (fProgress >= pOpenSequence->m_fEndKeyTime * 0.05f) {
 						pCtrlMgr->DeactivateSequence(pOpenSequence, 0.f);
@@ -268,8 +198,12 @@ namespace BetterTransitions {
 				}
 
 				HasDoorKeyframes(pOpenSequence);
+
+				pCurrentOpenSequence = pOpenSequence;
 			}
 			else {
+				pCurrentOpenSequence = nullptr;
+
 				pOpenSequence->m_fFrequency = 1.f;
 				pCtrlMgr->SetActive(true);
 				pCtrlMgr->DeactivateSequence(pCloseSequence, 0.f);
@@ -281,16 +215,154 @@ namespace BetterTransitions {
 				CdeclCall(0xC6BD00, pRoot, true);
 			}
 		}
+
+		class TextKeyStealer {
+		private:
+			uint32_t				uiTextKeyCount = 0;
+			NiControllerSequence*	pSequence = nullptr;
+		public:
+			TextKeyStealer(NiControllerSequence* apSequence) {
+				if (apSequence == pCurrentOpenSequence) {
+					pSequence = apSequence;
+					if (apSequence->m_spTextKeys)
+						uiTextKeyCount = apSequence->m_spTextKeys->m_uiNumKeys;
+				}
+				else {
+					pSequence = nullptr;
+				}
+			}
+			~TextKeyStealer() {
+				if (pSequence && pSequence->m_spTextKeys)
+					pSequence->m_spTextKeys->m_uiNumKeys = uiTextKeyCount;
+			}
+		};
+	}
+
+	namespace Tasks {
+		class InteriorCellLoaderTask : public IOTask {
+		public:
+			InteriorCellLoaderTask(TESObjectCELL* apCell) : IOTask(IO_TASK_PRIORITY_CRITICAL) {
+				if (apCell && apCell->IsInterior()) {
+					pCell = apCell;
+				}
+			}
+			~InteriorCellLoaderTask() {};
+
+			TESObjectCELL* pCell = nullptr;
+			NiPointer<QueuedFile>	spFiles;
+			bool					bLoaded = false;
+
+			void Run() override {
+				if (pCell && pCell->LoadAllTempData()) [[likely]] {
+					spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
+					QueueModels();
+				}
+				bLoaded = true;
+			}
+
+			void Cancel(BS_TASK_STATE aeState, void* apParent) override {
+				if (spFiles)
+					spFiles->Cancel(aeState, this);
+			}
+
+			void Finish() override {
+				if (AreModelsLoaded() && spFiles)
+					spFiles->CheckFinished();
+			}
+
+			bool GetDescription(char* apDescription, size_t aiBufferSize) override {
+				sprintf_s(apDescription, aiBufferSize, "ExteriorCellLoaderTask for cell %s", pCell ? pCell->GetFormEditorID() : "None");
+				return true;
+			}
+
+			bool AreModelsLoaded() const {
+				return spFiles ? spFiles->GetAllChildrenFinished() : bLoaded;
+			}
+
+		private:
+			void QueueModels() {
+				auto pIter = pCell->kReferences.GetHead();
+				while (pIter && !pIter->IsEmpty()) {
+					TESObjectREFR* pRef = pIter->GetItem();
+					pIter = pIter->GetNext();
+					if (pRef && !pRef->Get3D()) {
+						TESBoundObject* pBase = pRef->GetObjectReference();
+						// Need to double-check the model here, because Bethesda doesn't, and crashes like a dumb bitch
+						if (pBase && ModelLoader::GetSingleton()->GetModelForBoundObject(pBase, pRef))
+							ModelLoader::GetSingleton()->QueueBoundObject(pBase, IO_TASK_PRIORITY_HIGH, spFiles, pRef);
+					}
+				}
+			}
+		};
+
+		NiPointer<InteriorCellLoaderTask> spLoaderTask;
+
+		enum SpaceType {
+			NONE	 = 0,
+			INTERIOR = 1,
+			EXTERIOR = 2,
+		};
+
+		SpaceType Start(PlayerCharacter::PositionRequest* apTargetLoc) {
+#if PRELOAD_CELLS
+			// Load cell on an async thread
+			if (apTargetLoc->pCell && apTargetLoc->pCell->IsInterior()) {
+				if (!TES::GetSingleton()->IsCellLoaded(apTargetLoc->pCell, false)) {
+					Tasks::spLoaderTask = new Tasks::InteriorCellLoaderTask(apTargetLoc->pCell);
+					IOManager::GetSingleton()->AddTask(Tasks::spLoaderTask);
+					return INTERIOR;
+				}
+			}
+			else if (apTargetLoc->pFastTravelRef) {
+				ExteriorCellLoader* pLoader = ExteriorCellLoader::GetSingleton();
+				const uint32_t uiQueuedCellsOrg = pLoader->QueuedCellCount();
+				TESObjectREFR* pRef = apTargetLoc->pFastTravelRef->GetLinkedRef();
+				if (!pRef)
+					pRef = apTargetLoc->pFastTravelRef;
+
+				TESWorldSpace* pWorldSpace = pRef->GetWorldSpace();
+				const NiPoint3 kRefPos = pRef->GetPos();
+
+				if (pWorldSpace) {
+					TESObjectCELL* pCell = pWorldSpace->GetCellAtPos(kRefPos);
+					if (!pCell || !TES::GetSingleton()->IsCellLoaded(pCell, false)) {
+						int32_t iCellX = int32_t(kRefPos.x) >> 12;
+						int32_t iCellY = int32_t(kRefPos.y) >> 12;
+						for (int32_t iX = iCellX - 2; iX < iCellX + 2; iX++) {
+							for (int32_t iY = iCellY - 2; iY < iCellY + 2; iY++) {
+								ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
+							}
+						}
+					}
+
+					if (uiQueuedCellsOrg != pLoader->QueuedCellCount())
+						return EXTERIOR;
+				}
+			}
+
+			return NONE;
+#endif
+		}
+
+		void Finish() {
+			if (spLoaderTask) {
+				IOManager::GetSingleton()->CancelTask(Tasks::spLoaderTask, nullptr);
+				spLoaderTask = nullptr;
+			}
+
+			ExteriorCellLoader::GetSingleton()->PostProcessCompletedTasks();
+			if (ExteriorCellLoader::GetSingleton()->TryCancelTasks())
+				ExteriorCellLoader::GetSingleton()->WaitForTasks();
+		}
 	}
 
 	namespace WorldState {
 		struct _State {
-			bool bPlayerLocked		: 1 = false;
-			bool bAIEnabled			: 1 = true;
-			bool bCollisionEnabled	: 1 = true;
+			bool bPlayerLocked	   : 1 = false;
+			bool bAIEnabled		   : 1 = true;
+			bool bCollisionEnabled : 1 = true;
 		};
 		_State kState;
-
 
 		void Pause() {
 			{
@@ -315,60 +387,134 @@ namespace BetterTransitions {
 		}
 	}
 
-	void OnRequest(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc) {
-		WorldState::Pause();
+	namespace CellLoadState {
+		struct _State {
+			TESObjectREFR*	pCurrentDoor;
+			bool			bRequestFader	 : 1 = false;
+			bool			bLoadingCell	 : 1 = false;
+			bool			bIsFastTravel	 : 1 = false;
+			bool			bLoadingInterior : 1 = false;
+			bool			bLoadingExterior : 1 = false;
+		};
 
-		bLoadingCell = true;
-		bRequestFader = true;
+		_State kState;
 
-		pCurrentDoor = apDoor;
+		bool IsCellLoaded() {
+			if (kState.bLoadingInterior)
+				return Tasks::spLoaderTask ? (Tasks::spLoaderTask->eState == BS_TASK_STATE_COMPLETED) : true;
+			else if (kState.bLoadingExterior)
+				return ExteriorCellLoader::GetSingleton()->GetCount() == 0;
 
-		// We are going to enter a new cell, let's open the current door
-		if (pCurrentDoor) [[likely]] {
-			Animation::PlayDoorAnim(pCurrentDoor, true);
+			return true;
 		}
 
-#if PRELOAD_CELLS
-		// Load cell on an async thread
-		if (apTargetLoc->pCell && apTargetLoc->pCell->IsInterior()) {
-			if (!TES::GetSingleton()->IsCellLoaded(apTargetLoc->pCell, false)) {
-				bLoadingInterior = true;
-				spLoaderTask = new InteriorCellLoaderTask(apTargetLoc->pCell);
-				IOManager::GetSingleton()->AddTask(spLoaderTask);
+		void __fastcall Start(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc, bool abFastTravel) {
+			kState.bLoadingCell = true;
+			kState.bRequestFader = true;
+			kState.bIsFastTravel = abFastTravel;
+			kState.pCurrentDoor = apDoor;
+
+			if (kState.pCurrentDoor) [[likely]] {
+				Animation::PlayDoorAnim(kState.pCurrentDoor, true);
+			}
+
+			// We are going to enter a new cell, let's open the current door
+
+			auto eSpace = Tasks::Start(apTargetLoc);
+			switch (eSpace) {
+				case Tasks::INTERIOR:
+					kState.bLoadingInterior = true;
+					break;
+				case Tasks::EXTERIOR:
+					kState.bLoadingExterior = true;
+					break;
+				case Tasks::NONE:
+					break;
+				default:
+					__assume(0);
+					break;
 			}
 		}
-		else if (apTargetLoc->pFastTravelRef) {
-			ExteriorCellLoader* pLoader = ExteriorCellLoader::GetSingleton();
-			const uint32_t uiQueuedCellsOrg = pLoader->QueuedCellCount();
-			TESObjectREFR* pRef = apTargetLoc->pFastTravelRef->GetLinkedRef();
-			if (!pRef)
-				pRef = apTargetLoc->pFastTravelRef;
 
-			TESWorldSpace* pWorldSpace = pRef->GetWorldSpace();
-			const NiPoint3 kRefPos = pRef->GetPos();
+		bool __fastcall Finish(PlayerCharacter* apPlayer) {
+			Tasks::Finish();
 
-			if (pWorldSpace) {
-				TESObjectCELL* pCell = pWorldSpace->GetCellAtPos(kRefPos);
-				if (!pCell || !TES::GetSingleton()->IsCellLoaded(pCell, false)) {
-					int32_t iCellX = int32_t(kRefPos.x) >> 12;
-					int32_t iCellY = int32_t(kRefPos.y) >> 12;
-					for (int32_t iX = iCellX - 2; iX < iCellX + 2; iX++) {
-						for (int32_t iY = iCellY - 2; iY < iCellY + 2; iY++) {
-							ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
-						}
-					}
+			TESObjectREFR* pTargetDoor = nullptr;
+
+			// Close door we just used
+			if (kState.pCurrentDoor) [[likely]] {
+				Animation::PlayDoorAnim(kState.pCurrentDoor, false);
+
+				DoorTeleportData* pTeleport = kState.pCurrentDoor->GetTeleport();
+
+				if (pTeleport)
+					pTargetDoor = pTeleport->pLinkedDoor;
+			}
+
+			kState.pCurrentDoor = nullptr;
+
+			WorldState::Resume();
+
+			// Load the cell
+			bool bResult = ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), apPlayer);
+
+			// Close the door we just teleported to
+			if (pTargetDoor) [[likely]] {
+				Animation::PlayDoorAnim(pTargetDoor, false);
+			}
+
+			TES::GetSingleton()->UpdateFadeNodesForAttachedCells();
+
+			kState.bLoadingInterior = false;
+			kState.bLoadingExterior = false;
+			kState.bLoadingCell = false;
+
+			return bResult;
+		}
+
+		bool __fastcall Update(PlayerCharacter* apPlayer) {
+			if (kState.bLoadingCell) {
+				bool bStartFaderReally = kState.pCurrentDoor && Animation::HandleDoorAnim(kState.pCurrentDoor->DirectGet3D());
+				if (!kState.pCurrentDoor) [[unlikely]]
+					bStartFaderReally = true;
+
+				if (kState.bRequestFader && bStartFaderReally) {
+					float fFadeSeconds = kState.bIsFastTravel ? Settings::fFastTravelFadeToBlackFadeSeconds.Float() : Settings::fDoorFadeToBlackFadeSeconds.Float();
+					FaderManager::GetSingleton()->CreateFader(FADER_TYPE_ABOVE_MENU, fFadeSeconds, false);
+					kState.bRequestFader = false;
 				}
 
-				bLoadingExterior = uiQueuedCellsOrg != pLoader->QueuedCellCount();
+				const bool bFaderFinished = FaderManager::GetSingleton()->IsFaderVisible(FADER_TYPE_ABOVE_MENU);
+				if (IsCellLoaded() && bFaderFinished) {
+					return Finish(apPlayer);
+				}
+				else {
+#if PLAYER_ANIMS
+					// Fader is ongoing, update player anims
+					const float fDelta = TimeGlobal::GetSingleton()->fDelta;
+					apPlayer->UpdateAnimation();
+					apPlayer->b3rdPerson = !apPlayer->b3rdPerson;
+					ThisCall(0x8D3550, apPlayer, fDelta); // Character::Update
+					apPlayer->UpdateAnimationMovement(apPlayer->GetPlayerAnimation(!apPlayer->b3rdPerson), 0.f);
+					apPlayer->b3rdPerson = !apPlayer->b3rdPerson;
+					ThisCall(0x8D3550, apPlayer, fDelta); // Character::Update
+					apPlayer->UpdateAnimationMovement(apPlayer->GetPlayerAnimation(!apPlayer->b3rdPerson), 0.f);
+#endif
+					return true;
+				}
+			}
+			else {
+				return ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), apPlayer);
 			}
 		}
-#endif
 	}
 
-	CallDetour kOrgRequestPositionPlayer[2];
-	CallDetour kOrgHandlePositionPlayer;
-	CallDetour kOrgCanRenderBackground;
-	CallDetour kOrgCanRenderWorld;
+
+	void OnRequest(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc, bool abFastTravel) {
+		WorldState::Pause();
+		CellLoadState::Start(apDoor, apTargetLoc, abFastTravel);
+	}
+
 	class Hook {
 	public:
 		// Runs on demand
@@ -377,89 +523,31 @@ namespace BetterTransitions {
 			TESObjectREFR* pUsedDoor = static_cast<TESObjectREFR*>(apTargetLoc->pCallbackFuncArg);
 
 			// Should not happen, but just in case
-			if (pUsedDoor && pUsedDoor == pCurrentDoor)
+			if (pUsedDoor && pUsedDoor == CellLoadState::kState.pCurrentDoor)
 				return;
 
-			OnRequest(pUsedDoor, apTargetLoc);
+			OnRequest(pUsedDoor, apTargetLoc, INDEX == 0);
 
 			ThisCall(kOrgRequestPositionPlayer[INDEX].GetOverwrittenAddr(), this, apTargetLoc);
 		}
 
 		// Runs every frame
 		bool HandlePositionPlayerRequest() {
-			bool bResult = false;
-			if (bLoadingCell) [[unlikely]] {
-				bool bStartFaderReally = pCurrentDoor && Animation::HandleDoorAnim(pCurrentDoor->DirectGet3D());
-				if (!pCurrentDoor) [[unlikely]]
-					bStartFaderReally = true;
-
-				if (bRequestFader && bStartFaderReally) {
-					FaderManager::GetSingleton()->CreateFader(FADER_TYPE_ABOVE_MENU, fDoorFadeToBlackFadeSeconds.Float(),  false);
-					bRequestFader = false;
-				}
-
-				const bool bFaderFinished = FaderManager::GetSingleton()->IsFaderVisible(FADER_TYPE_ABOVE_MENU);
-				if (IsCellLoaded() && bFaderFinished) {
-					if (spLoaderTask) {
-						IOManager::GetSingleton()->CancelTask(spLoaderTask, nullptr);
-						spLoaderTask = nullptr;
-					}
-
-					ExteriorCellLoader::GetSingleton()->WaitForTasks();
-
-					TESObjectREFR* pTargetDoor = nullptr;
-
-					// Close door we just used
-					if (pCurrentDoor) [[likely]] {
-						Animation::PlayDoorAnim(pCurrentDoor, false);
-					
-						DoorTeleportData* pTeleport = pCurrentDoor->GetTeleport();
-					
-						if (pTeleport)
-							pTargetDoor = pTeleport->pLinkedDoor;
-					}
-
-					pCurrentDoor = nullptr;
-
-					WorldState::Resume();
-
-					// Load the cell
-					bResult = ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), this);
-
-					// Close the door we just teleported to
-					if (pTargetDoor) [[likely]] {
-						Animation::PlayDoorAnim(pTargetDoor, false);
-					}
-
-					TES::GetSingleton()->UpdateFadeNodesForAttachedCells();
-
-					bLoadingInterior = false;
-					bLoadingExterior = false;
-					bLoadingCell = false;
-				}
-				else {
-#if PLAYER_ANIMS
-					PlayerCharacter* pThis = reinterpret_cast<PlayerCharacter*>(this);
-					// Fader is ongoing, update player anims
-					const float fDelta = TimeGlobal::GetSingleton()->fDelta;
-					pThis->UpdateAnimation();
-					pThis->b3rdPerson = !pThis->b3rdPerson;
-					ThisCall(0x8D3550, this, fDelta); // Character::Update
-					pThis->UpdateAnimationMovement(pThis->GetPlayerAnimation(!pThis->b3rdPerson), 0.f);
-					pThis->b3rdPerson = !pThis->b3rdPerson;
-					ThisCall(0x8D3550, this, fDelta); // Character::Update
-					pThis->UpdateAnimationMovement(pThis->GetPlayerAnimation(!pThis->b3rdPerson), 0.f);
-#endif
-					bResult = true;
-				}
-			}
-			else {
-				bResult = ThisCall<bool>(kOrgHandlePositionPlayer.GetOverwrittenAddr(), this);
-			}
-
-			return bResult;
+			return CellLoadState::Update(reinterpret_cast<PlayerCharacter*>(this));
 		}
 	};
+
+	float GetFloatSetting(const char* apSettingName, float afDefaultValue, const char* apFilename) {
+		char cFloatBuffer[256];
+		sprintf_s(cFloatBuffer, "%f", afDefaultValue);
+		if (GetPrivateProfileString("Main", apSettingName, "0.0", cFloatBuffer, sizeof(cFloatBuffer), apFilename)) {
+			float fValue = 0.f;
+			if (sscanf_s(cFloatBuffer, "%f", &fValue))
+				return fValue;
+		}
+
+		return afDefaultValue;
+	}
 
 	void InitSettings() {
 		char cFilename[MAX_PATH];
@@ -468,14 +556,15 @@ namespace BetterTransitions {
 		strncpy_s(cRootDir, cFilename, (strlen(cFilename) - 13));
 		char* pLastSlash = (strrchr(cFilename, '\\') + 1);
 		strcpy_s(pLastSlash, cRootDir - pLastSlash, "Data\\nvse\\plugins\\BetterTransitions.ini");
+		
 		Settings::bAnimateDoors = GetPrivateProfileInt("Main", "bAnimateDoors", 1, cFilename);
+		Settings::fDoorFadeToBlackFadeSeconds.Initialize("fDoorFadeToBlackFadeSeconds", GetFloatSetting("fDoorFadeToBlackFadeSeconds", 0.2f, cFilename));
+		Settings::fFastTravelFadeToBlackFadeSeconds.Initialize("fFastTravelFadeToBlackFadeSeconds", GetFloatSetting("fFastTravelFadeToBlackFadeSeconds", 0.5f, cFilename));
 	}
 
 	void InitHooks() {
 		kOrgRequestPositionPlayer[0].ReplaceCallEx(0x798A9D, &Hook::RequestPositionPlayer<0>);
 		kOrgRequestPositionPlayer[1].ReplaceCallEx(0x518CA7, &Hook::RequestPositionPlayer<1>);
 		kOrgHandlePositionPlayer.ReplaceCallEx(0x86F94F, &Hook::HandlePositionPlayerRequest);
-
-		fDoorFadeToBlackFadeSeconds.Initialize("fDoorFadeToBlackFadeSeconds", 0.2f);
 	}
 }

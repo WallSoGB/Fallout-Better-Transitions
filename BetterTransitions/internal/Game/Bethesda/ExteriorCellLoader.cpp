@@ -23,6 +23,11 @@ void ExteriorCellLoader::PostProcessCompletedTasks() {
 	ThisCall(0x528110, this);
 }
 
+// GAME - 0x5281F0
+uint32_t ExteriorCellLoader::TryCancelTasks() {
+	return ThisCall(0x5281F0, this);
+}
+
 // GAME - 0x5282D0
 void ExteriorCellLoader::WaitForTasks() {
 	ThisCall(0x5282D0, this);
