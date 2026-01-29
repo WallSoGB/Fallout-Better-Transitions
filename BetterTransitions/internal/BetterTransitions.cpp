@@ -415,10 +415,9 @@ namespace BetterTransitions {
 			kState.pCurrentDoor = apDoor;
 
 			if (kState.pCurrentDoor) [[likely]] {
+				// We are going to enter a new cell, let's open the current door
 				Animation::PlayDoorAnim(kState.pCurrentDoor, true);
 			}
-
-			// We are going to enter a new cell, let's open the current door
 
 			auto eSpace = Tasks::Start(apTargetLoc);
 			switch (eSpace) {
