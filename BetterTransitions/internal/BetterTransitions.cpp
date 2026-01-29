@@ -399,11 +399,16 @@ namespace BetterTransitions {
 
 		_State kState;
 
-		bool IsCellLoaded() {
-			if (kState.bLoadingInterior)
-				return Tasks::spLoaderTask ? (Tasks::spLoaderTask->eState == BS_TASK_STATE_COMPLETED) : true;
-			else if (kState.bLoadingExterior)
-				return ExteriorCellLoader::GetSingleton()->GetCount() == 0;
+		bool __fastcall IsCellLoaded(bool abFaderFinished) {
+			if (kState.bLoadingInterior) {
+				if (Tasks::spLoaderTask)
+					return Tasks::spLoaderTask->eState == BS_TASK_STATE_COMPLETED;
+			}
+			else if (kState.bLoadingExterior) {
+				if (ExteriorCellLoader::GetSingleton()->GetCount() && !abFaderFinished) {
+					return false;
+				}
+			}
 
 			return true;
 		}
@@ -484,7 +489,7 @@ namespace BetterTransitions {
 				}
 
 				const bool bFaderFinished = FaderManager::GetSingleton()->IsFaderVisible(FADER_TYPE_ABOVE_MENU);
-				if (IsCellLoaded() && bFaderFinished) {
+				if (IsCellLoaded(bFaderFinished) && bFaderFinished) {
 					return Finish(apPlayer);
 				}
 				else {
