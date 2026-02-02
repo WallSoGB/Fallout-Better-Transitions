@@ -555,11 +555,10 @@ namespace BetterTransitions {
 
 	void InitSettings() {
 		char cFilename[MAX_PATH];
-		char cRootDir[MAX_PATH];
 		GetModuleFileNameA(nullptr, cFilename, MAX_PATH);
-		strncpy_s(cRootDir, cFilename, (strlen(cFilename) - 13));
-		char* pLastSlash = (strrchr(cFilename, '\\') + 1);
-		strcpy_s(pLastSlash, cRootDir - pLastSlash, "Data\\nvse\\plugins\\BetterTransitions.ini");
+		char* pLastSlash = strrchr(cFilename, '\\') + 1;
+		uint32_t uiLength = MAX_PATH - (pLastSlash - cFilename);
+		strcpy_s(pLastSlash, uiLength, "Data\\nvse\\plugins\\BetterTransitions.ini");
 		
 		Settings::bAnimateDoors = GetPrivateProfileInt("Main", "bAnimateDoors", 1, cFilename);
 		Settings::fDoorFadeToBlackFadeSeconds.Initialize("fDoorFadeToBlackFadeSeconds", GetFloatSetting("fDoorFadeToBlackFadeSeconds", 0.2f, cFilename));
