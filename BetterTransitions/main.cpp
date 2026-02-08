@@ -3,7 +3,7 @@
 #include "BetterTransitions.hpp"
 
 constexpr char const* PLUGIN_NAME = "Better Transitions";
-constexpr uint32_t PLUGIN_VERSION = 121;
+constexpr uint32_t PLUGIN_VERSION = 122;
 
 #include "Shared/BSMemory/BSMemory.hpp"
 BS_ALLOCATORS
