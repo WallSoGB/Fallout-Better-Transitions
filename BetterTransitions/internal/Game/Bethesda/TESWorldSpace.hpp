@@ -129,6 +129,7 @@ public:
 	TESTexture							kCanopyShadow;
 	TESTexture							kWaterNoiseTexture;
 
+	TESObjectCELL* GetCellFromCellCoord(int32_t aiX, int32_t aiY) const;
 	TESObjectCELL* GetCellAtPos(const NiPoint3& arPos) const;
 };
 

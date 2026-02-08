@@ -1,14 +1,13 @@
 #pragma once
 
 #include "BaseFormComponent.hpp"
+#include "BSStringT.hpp"
 #include "BSSimpleList.hpp"
-#include "BSString.hpp"
+#include "BSTCaseInsensitiveStringMap.hpp"
 #include "Gamebryo/NiTLargeArray.hpp"
-#include "Gamebryo/NiTPointerMap.hpp"
-#include "TESFullName.hpp"
 
-#define IS_ID(form, type) (form->ucFormType == kFormType_##type)
-#define NOT_ID(form, type) (form->ucFormType != kFormType_##type)
+#define IS_ID(form, type) (form->GetFormType() == FORM_TYPE::##type)
+#define NOT_ID(form, type) (form->GetFormType() != FORM_TYPE::##type)
 
 class NiColor;
 class BGSSaveGameBuffer;
@@ -17,132 +16,12 @@ class TESObjectREFR;
 class TESBoundObject;
 class Script;
 class TESFile;
-
 struct FORM;
 
-enum FormType {
-	kFormType_None = 0,					// 00
-	kFormType_TES4,
-	kFormType_Group,
-	kFormType_GMST,
-	kFormType_BGSTextureSet,
-	kFormType_BGSMenuIcon,
-	kFormType_TESGlobal,
-	kFormType_TESClass,
-	kFormType_TESFaction,					// 08
-	kFormType_BGSHeadPart,
-	kFormType_TESHair,
-	kFormType_TESEyes,
-	kFormType_TESRace,
-	kFormType_TESSound,
-	kFormType_BGSAcousticSpace,
-	kFormType_TESSkill,
-	kFormType_EffectSetting,					// 10
-	kFormType_Script,
-	kFormType_TESLandTexture,
-	kFormType_EnchantmentItem,
-	kFormType_SpellItem,
-	kFormType_TESObjectACTI,
-	kFormType_BGSTalkingActivator,
-	kFormType_BGSTerminal,
-	kFormType_TESObjectARMO,					// 18	inv object
-	kFormType_TESObjectBOOK,						// 19	inv object
-	kFormType_TESObjectCLOT,					// 1A	inv object
-	kFormType_TESObjectCONT,
-	kFormType_TESObjectDOOR,
-	kFormType_IngredientItem,				// 1D	inv object
-	kFormType_TESObjectLIGH,					// 1E	inv object
-	kFormType_TESObjectMISC,						// 1F	inv object
-	kFormType_TESObjectSTAT,					// 20
-	kFormType_BGSStaticCollection,
-	kFormType_BGSMovableStatic,
-	kFormType_BGSPlaceableWater,
-	kFormType_TESGrass,
-	kFormType_TESObjectTREE,
-	kFormType_TESFlora,
-	kFormType_TESFurniture,
-	kFormType_TESObjectWEAP,					// 28	inv object
-	kFormType_TESAmmo,						// 29	inv object
-	kFormType_TESNPC,						// 2A
-	kFormType_TESCreature,					// 2B
-	kFormType_TESLevCreature,			// 2C
-	kFormType_TESLevCharacter,			// 2D
-	kFormType_TESKey,						// 2E	inv object
-	kFormType_AlchemyItem,				// 2F	inv object
-	kFormType_BGSIdleMarker,				// 30
-	kFormType_BGSNote,						// 31	inv object
-	kFormType_BGSConstructibleObject,		// 32	inv object
-	kFormType_BGSProjectile,
-	kFormType_TESLevItem,				// 34	inv object
-	kFormType_TESWeather,
-	kFormType_TESClimate,
-	kFormType_TESRegion,
-	kFormType_NavMeshInfoMap,						// 38
-	kFormType_TESObjectCELL,
-	kFormType_TESObjectREFR,				// 3A
-	kFormType_Character,						// 3B
-	kFormType_Creature,						// 3C
-	kFormType_MissileProjectile,						// 3D
-	kFormType_GrenadeProjectile,						// 3E
-	kFormType_BeamProjectile,						// 3F
-	kFormType_FlameProjectile,						// 40
-	kFormType_TESWorldSpace,
-	kFormType_TESObjectLAND,
-	kFormType_NavMesh,
-	kFormType_TLOD,
-	kFormType_TESTopic,
-	kFormType_TESTopicInfo,
-	kFormType_TESQuest,
-	kFormType_TESIdleForm,						// 48
-	kFormType_TESPackage,
-	kFormType_TESCombatStyle,
-	kFormType_TESLoadScreen,
-	kFormType_TESLevSpell,
-	kFormType_TESObjectANIO,
-	kFormType_TESWaterForm,
-	kFormType_TESEffectShader,
-	kFormType_TOFT,						// 50	table of Offset (see OffsetData in Worldspace)
-	kFormType_BGSExplosion,
-	kFormType_BGSDebris,
-	kFormType_TESImageSpace,
-	kFormType_TESImageSpaceModifier,
-	kFormType_BGSListForm,					// 55
-	kFormType_BGSPerk,
-	kFormType_BGSBodyPartData,
-	kFormType_BGSAddonNode,				// 58
-	kFormType_ActorValueInfo,
-	kFormType_BGSRadiationStage,
-	kFormType_BGSCameraShot,
-	kFormType_BGSCameraPath,
-	kFormType_BGSVoiceType,
-	kFormType_BGSImpactData,
-	kFormType_BGSImpactDataSet,
-	kFormType_TESObjectARMA,						// 60
-	kFormType_BGSEncounterZone,
-	kFormType_BGSMessage,
-	kFormType_BGSRagdoll,
-	kFormType_DOBJ,
-	kFormType_BGSLightingTemplate,
-	kFormType_BGSMusicType,
-	kFormType_TESObjectIMOD,					// 67	inv object
-	kFormType_TESReputation,				// 68
-	kFormType_ContinuousBeamProjectile,						// 69 Continuous Beam
-	kFormType_TESRecipe,
-	kFormType_TESRecipeCategory,
-	kFormType_TESCasinoChips,				// 6C	inv object
-	kFormType_TESCasino,
-	kFormType_TESLoadScreenType,
-	kFormType_MediaSet,
-	kFormType_MediaLocationController,	// 70
-	kFormType_TESChallenge,
-	kFormType_TESAmmoEffect,
-	kFormType_TESCaravanCard,				// 73	inv object
-	kFormType_TESCaravanMoney,				// 74	inv object
-	kFormType_TESCaravanDeck,
-	kFormType_BGSDehydrationStage,
-	kFormType_BGSHungerStage,
-	kFormType_BGSSleepDeprevationStage,	// 78
-	kFormType_Count
+struct FORM_ENUM_STRING {
+	uint8_t			ucFormID;
+	const char*		pFormString;
+	uint32_t		uiFormString;
 };
 
 class TESForm : public BaseFormComponent {
@@ -152,7 +31,7 @@ public:
 	virtual					~TESForm();
 	virtual void			InitializeData();
 	virtual void			ClearData();
-	virtual bool			Check(); // NavMesh returns false, rest 1, NavMeshInfoMap does shit
+	virtual bool			ProcessBeforeSave(); // NavMesh returns false, rest 1, NavMeshInfoMap does shit
 	virtual bool			Load(TESFile* apFile);
 	virtual bool			LoadPartial(TESFile* apFile);
 	virtual bool			Save(TESFile* apFile);
@@ -188,9 +67,9 @@ public:
 	virtual bool			GetRandomAnim() const;
 	virtual bool			GetNeedtoChangeProcess() const;
 	virtual bool			GetDangerous() const;
-	virtual bool			GetHasSpecificTextures() const;
+	virtual bool			GetHasPLSpecTex() const;
 	virtual bool			GetObstacle() const;
-	virtual bool			GetNavMeshGround() const;
+	virtual bool			GetContinuousBroadcast() const;
 	virtual bool			GetOnLocalMap() const;
 	virtual void			SetCastsShadows(bool abShadowCaster);
 	virtual NiColor*		GetEmittanceColor();
@@ -230,59 +109,94 @@ public:
 		uint32_t	uiVCRevision;
 	};
 
-	enum Flags : uint32_t {
-		IS_MASTER				= 1u << 0,
-		IS_ALTERED				= 1u << 1,
-		INITIALIZED				= 1u << 3,
-		UNK_4					= 1u << 4,
-		DELETED					= 1u << 5,
-		KNOWN					= 1u << 6,
-		IN_PLACEABLE_WATER		= 1u << 6,
-		UNK_7					= 1u << 7,
-		DROPPED					= 1u << 8,
-		CASTS_SHADOWS			= 1u << 9,
-		QUEST_ITEM				= 1u << 10,
-		PERSISTENT				= 1u << 10,
-		DISABLED				= 1u << 11,
-		UNK_12					= 1u << 12,
-		EMPTY					= 1u << 13,
-		RESET_DESTRUCT			= 1u << 13,
-		DONT_SAVE				= 1u << 14,
-		TEMPORARY				= 1u << 14,
-		VISIBLE_DISTANT			= 1u << 15,
-		HAVOK_DEATH				= 1u << 16,
-		NEED_TO_CHANGE_PROCESS	= 1u << 17,
-		COMPRESSED				= 1u << 18,
-		SPECIFIC_TEXTURES		= 1u << 19,
-		CENTER_ON_CREATION		= 1u << 20,
-		STILL_LOADING			= 1u << 21,
-		BEING_DROPPED			= 1u << 22,
-		DESTROYED				= 1u << 23,
-		UNK_24					= 1u << 24,
-		OBSTACLE				= 1u << 25,
-		IS_VATS_TARGETABLE		= 1u << 26,
-		CHANGED_INVENTORY		= 1u << 27,
-		UNK_28					= 1u << 28,
-		CHILD_CAN_USE			= 1u << 29, // TESObjectACTI, TESFurniture, BGSIdleMarker
-		TALKING_ACTIVATOR		= 1u << 30,
-		CONTINUOUS_BROADCAST	= 1u << 30,
-		UNK_31					= 1u << 31,
+	struct ALIGN4 _FormFlags {
+		enum Flags : uint32_t {
+			MASTER					= 1u << 0, // TESForm
+			ALTERED					= 1u << 1, // TESForm
 
-		TAKEN = DELETED | IS_ALTERED,
+			INITIALIZED				= 1u << 3, // TESForm
+			NO_COLLISION			= 1u << 4, // TESForm
+			DELETED					= 1u << 5, // TESForm
+			TREE_LOD				= 1u << 6, // TESBoundObject
+			HAS_SPOKEN				= 1u << 6, // Actor
+			IN_PLACEABLE_WATER		= 1u << 6, // TESBoundObject (!TESObjectDOOR)
+			HIDDEN_DOOR				= 1u << 6, // TESObjectDOOR
+			BORDER_REGION			= 1u << 6, // TESRegion
+			CONSTANT				= 1u << 6, // TESGlobal
+			FIRE_OFF				= 1u << 7, // TESForm
+			DROPPED					= 1u << 8, // TESObjectREFR (!TESObjectDOOR)
+			INACCESSIBLE			= 1u << 8, // TESObjectREFR (TESObjectDOOR)
+			ON_LOCAL_MAP			= 1u << 9, // TESBoundObject
+			CASTS_SHADOWS			= 1u << 9,  // TESObjectREFR (TESObjectLIGH)
+			MOTION_BLUR				= 1u << 9,  // TESObjectREFR (BGSMovableStatic)
+			QUEST_ITEM				= 1u << 10, // TESBoundObject
+			PERSISTENT				= 1u << 10, // TESObjectREFR
+			PERSISTENT_CELL			= 1u << 10, // TESObjectCELL
+			DISPLAY_ON_MAIN_MENU	= 1u << 10, // TESLoadScreen
+			DISABLED				= 1u << 11, // TESObjectREFR, NavMesh
+
+			EMPTY					= 1u << 13, // TESFlora
+			RESET_DESTRUCT			= 1u << 13, // BGSDestructibleObjectForm
+			NO_VOICE_FILTER			= 1u << 13, // BGSTalkingActivator
+			HAS_RESULTS				= 1u << 13, // TESTopicInfo, TESTopic
+			TEMPORARY				= 1u << 14, // TESForm
+			VISIBLE_DISTANT			= 1u << 15, // TESForm
+			RANDOM_ANIM_START		= 1u << 16, // TESObjectACTI, TESObjectLIGH, TESObjectCONT, TESObjectDOOR, TESFurniture, BGSTalkingActivator, BGSTerminal, BGSMovableStatic
+			HIGH_PRIORITY_LOD		= 1u << 16, // TESObjectREFR
+			HAVOK_DEATH				= 1u << 16, // Actor
+			NEED_TO_CHANGE_PROCESS	= 1u << 17, // MobileObject
+			DANGEROUS				= 1u << 17, // TESObjectACTI
+			RADIO_STATION			= 1u << 17, // BGSTalkingActivator
+			OFF_LIMITS				= 1u << 17, // TESObjectCELL
+			COMPRESSED				= 1u << 18, // TESForm (TESFile)
+			TARGETED				= 1u << 18, // TESObjectREFR
+			STARTS_DEAD				= 1u << 19, // TESActorBase
+			HAS_TEMP_3D				= 1u << 19, // TESObjectREFR
+			SPECIFIC_TEXTURES		= 1u << 19, // TESBoundObject (!TESActorBase)
+			CANT_WAIT				= 1u << 19, // TESWorldSpace, TESObjectCELL
+			CENTER_ON_CREATION		= 1u << 20, // TESObjectREFR (!Actor)
+			IGNORE_FRIENDLY_HITS	= 1u << 20, // Actor
+			STILL_LOADING			= 1u << 21, // TESForm
+			BEING_DROPPED			= 1u << 22, // TESOBjectREFR
+			DESTROYED				= 1u << 23, // TESObjectREFR
+			DESTRUCTIBLE			= 1u << 24, // TESObjectREFR
+			OBSTACLE				= 1u << 25, // TESBoundObject
+			NO_AI_ACQUIRE			= 1u << 25, // TESObjectREFR
+			VATS_TARGET_OVERRIDE	= 1u << 26, // TESObjectREFR
+			NAVMESH_GEN_FILTER		= 1u << 26, // GECK - TESObjectREFR, TESObjectACTI, TESObjectCONT, BGSStaticCollection 
+			DISABLE_FADE			= 1u << 27, // TESObjectREFR
+			NAVMESH_GEN_BOUND_BOX	= 1u << 27, // GECK - TESObjectREFR, TESObjectACTI, TESObjectCONT, BGSStaticCollection 
+			NON_PIPBOY_RADIO		= 1u << 28, // TESObjectACTI
+			REFLECTED_BY_AUTO_WATER = 1u << 28, // TESObjectREFR
+			CHILD_CAN_USE			= 1u << 29, // TESObjectACTI, TESFurniture, BGSIdleMarker
+			REFRACTED_BY_AUTO_WATER = 1u << 29, // TESObjectREFR
+			CONTINUOUS_BROADCAST	= 1u << 30, // BGSTalkingActivator
+			NAVMESH_GEN_GROUND		= 1u << 30, // GECK - TESObjectREFR, TESObjectACTI, TESObjectCONT, BGSStaticCollection 
+
+			TAKEN = DELETED | ALTERED,
+		};
 	};
+	using FormFlags = _FormFlags::Flags;
 
-	enum {
-		kModified_Flags = 0x00000001
-	};
-
-	uint8_t					ucFormType;
+	uint8_t					eFormType;
 #if JIP_CHANGES
 	Bitfield8				ucJIPFormFlags5;
 	Bitfield16				usJIPFormFlags6;
 #endif
-	Bitfield32				uiFormFlags;
+	Bitfield<_FormFlags>	uiFormFlags;
 	uint32_t				uiFormID;
 	BSSimpleList<TESFile*>	kFiles;
+
+	uint32_t	GetFormID() const;
+	FORM_TYPE	GetFormType() const;
+
+	bool GetInitialized() const;
+
+	bool GetDeleted() const;
+
+	bool GetDisabled() const;
+
+	bool IsStillLoading() const;
 };
 
 ASSERT_SIZE(TESForm, 0x18);

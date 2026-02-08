@@ -20,6 +20,7 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Query(const NVSEInterface* apNVSE, PluginInfo*
 EXTERN_DLL_EXPORT bool NVSEPlugin_Load(NVSEInterface* apNVSE) {
 	BetterTransitions::InitSettings();
 	BetterTransitions::InitHooks();
+	BetterTransitions::InitMessageHandler(apNVSE);
 	return true;
 }
 

@@ -142,7 +142,7 @@ public:
 	BGSLightingTemplate*					pLightingTemplate;
 	Bitfield32								uiInheritFlags;
 
-	bool IsInterior() const { return ucCellFlags.GetBit(INTERIOR); }
+	bool IsInterior() const { return ucCellFlags.Get(INTERIOR); }
 
 	bool LoadAllTempData();
 

@@ -26,7 +26,7 @@ public:
 
 	bool IsFadingIn(FADER_TYPE aeFader) const;
 
-	void CreateFader(FADER_TYPE aeFader, float afFadeSpeed, bool abUnk);
+	void CreateFader(FADER_TYPE aeFader, float afFadeSpeed, bool abBeginBlack);
 
 	void RemoveFader(FADER_TYPE aeFader, bool abForce);
 };

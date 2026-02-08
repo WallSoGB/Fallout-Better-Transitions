@@ -33,8 +33,8 @@ bool FaderManager::IsFadingIn(FADER_TYPE aeFader) const {
 }
 
 // GAME - 0x700960
-void FaderManager::CreateFader(FADER_TYPE aeFader, float afFadeSpeed, bool abUnk) {
-    ThisCall(0x700960, this, aeFader, afFadeSpeed, abUnk);
+void FaderManager::CreateFader(FADER_TYPE aeFader, float afFadeSpeed, bool abBeginBlack) {
+    ThisCall(0x700960, this, aeFader, afFadeSpeed, abBeginBlack);
 }
 
 // GAME - 0x7010E0

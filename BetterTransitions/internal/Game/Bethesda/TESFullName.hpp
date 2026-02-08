@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseFormComponent.hpp"
-#include "BSString.hpp"
+#include "BSStringT.hpp"
 
 class TESFile;
 class TESForm;

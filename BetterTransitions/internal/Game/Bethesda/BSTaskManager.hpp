@@ -26,6 +26,10 @@ public:
 		ThisCall(0x44AC40, this, apTask, apTaskOwner);
 	}
 
+	bool TryCancelTask(BSTask<T>* apTask, void* apTaskOwner) {
+		return ThisCall<bool>(0x528870, this, apTask, apTaskOwner);
+	}
+
 	void WaitForTask(BSTask<T>* apTask) {
 		ThisCall(0x5289B0, this, apTask);
 	}

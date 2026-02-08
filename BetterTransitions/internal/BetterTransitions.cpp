@@ -9,6 +9,7 @@
 #include "Bethesda/TES.hpp"
 #include "Bethesda/TESObjectCELL.hpp"
 #include "Bethesda/TESWorldSpace.hpp"
+#include "Bethesda/TESBoundObject.hpp"
 #include "Bethesda/GameSettingCollection.hpp"
 #include "Bethesda/TimeGlobal.hpp"
 #include "Bethesda/ProcessLists.hpp"
@@ -17,6 +18,8 @@
 #include "Gamebryo/NiControllerManager.hpp"
 #include "Gamebryo/NiControllerSequence.hpp"
 
+#include "nvse/PluginAPI.h"
+
 namespace BetterTransitions {
 
 #define PRELOAD_CELLS 1
@@ -24,6 +27,7 @@ namespace BetterTransitions {
 
 	CallDetour kOrgRequestPositionPlayer[2];
 	CallDetour kOrgHandlePositionPlayer;
+	CallDetour kOrgIsMenuMode;
 
 	namespace Settings {
 		class CustomGameSetting {
@@ -163,7 +167,13 @@ namespace BetterTransitions {
 			if (!apRef) [[unlikely]]
 				return;
 
-			NiAVObject* pRoot = apRef->Get3D();
+			if (apRef->GetDeleted() || apRef->GetDisabled())
+				return;
+
+			if (!apRef->GetInitialized() || apRef->IsStillLoading())
+				return;
+
+			NiAVObject* pRoot = apRef->DirectGet3D();
 			if (!pRoot) [[unlikely]]
 				return;
 
@@ -248,16 +258,19 @@ namespace BetterTransitions {
 			}
 			~InteriorCellLoaderTask() {};
 
-			TESObjectCELL* pCell = nullptr;
+			TESObjectCELL*			pCell = nullptr;
 			NiPointer<QueuedFile>	spFiles;
 			bool					bLoaded = false;
 
 			void Run() override {
 				if (pCell && pCell->LoadAllTempData()) [[likely]] {
+					bLoaded = true;
 					spFiles = BSMemory::create<QueuedFile, 0xC3C590>(IO_TASK_PRIORITY_VERY_HIGH);
 					QueueModels();
 				}
-				bLoaded = true;
+				else {
+					bLoaded = true;
+				}
 			}
 
 			void Cancel(BS_TASK_STATE aeState, void* apParent) override {
@@ -324,13 +337,17 @@ namespace BetterTransitions {
 				const NiPoint3 kRefPos = pRef->GetPos();
 
 				if (pWorldSpace) {
+					const uint32_t uiGridSize = *reinterpret_cast<uint32_t*>(0x11C63CC + 4);
+					const uint32_t uiGridHalfSize = uiGridSize >> 1;
 					TESObjectCELL* pCell = pWorldSpace->GetCellAtPos(kRefPos);
-					if (!pCell || !TES::GetSingleton()->IsCellLoaded(pCell, false)) {
+					if (!TES::GetSingleton()->IsCellLoaded(pCell, false)) {
 						int32_t iCellX = int32_t(kRefPos.x) >> 12;
 						int32_t iCellY = int32_t(kRefPos.y) >> 12;
-						for (int32_t iX = iCellX - 2; iX < iCellX + 2; iX++) {
-							for (int32_t iY = iCellY - 2; iY < iCellY + 2; iY++) {
-								ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
+						for (int32_t iX = iCellX - uiGridHalfSize; iX < iCellX + uiGridHalfSize; iX++) {
+							for (int32_t iY = iCellY - uiGridHalfSize; iY < iCellY + uiGridHalfSize; iY++) {
+								pCell = pWorldSpace->GetCellFromCellCoord(iX, iY);
+								if (!TES::GetSingleton()->IsCellLoaded(pCell, false))
+									ExteriorCellLoader::GetSingleton()->QueueCellLoad(pWorldSpace, iX, iY);
 							}
 						}
 					}
@@ -339,20 +356,21 @@ namespace BetterTransitions {
 						return EXTERIOR;
 				}
 			}
-
-			return NONE;
 #endif
+			return NONE;
 		}
 
 		void Finish() {
 			if (spLoaderTask) {
-				IOManager::GetSingleton()->CancelTask(Tasks::spLoaderTask, nullptr);
+				if (IOManager::GetSingleton()->TryCancelTask(spLoaderTask, nullptr))
+					IOManager::GetSingleton()->WaitForTask(spLoaderTask);
 				spLoaderTask = nullptr;
 			}
-
-			ExteriorCellLoader::GetSingleton()->PostProcessCompletedTasks();
-			if (ExteriorCellLoader::GetSingleton()->TryCancelTasks())
-				ExteriorCellLoader::GetSingleton()->WaitForTasks();
+			else {
+				ExteriorCellLoader::GetSingleton()->PostProcessCompletedTasks();
+				if (ExteriorCellLoader::GetSingleton()->TryCancelTasks())
+					ExteriorCellLoader::GetSingleton()->WaitForTasks();
+			}
 		}
 	}
 
@@ -401,23 +419,39 @@ namespace BetterTransitions {
 
 		bool __fastcall IsCellLoaded(bool abFaderFinished) {
 			if (kState.bLoadingInterior) {
-				if (Tasks::spLoaderTask)
+				if (Tasks::spLoaderTask) {
+					if (Tasks::spLoaderTask->bLoaded && abFaderFinished)
+						return true;
+
 					return Tasks::spLoaderTask->eState == BS_TASK_STATE_COMPLETED;
+				}
 			}
 			else if (kState.bLoadingExterior) {
-				if (ExteriorCellLoader::GetSingleton()->GetCount() && !abFaderFinished) {
+				if (abFaderFinished)
+					return true;
+
+				if (ExteriorCellLoader::GetSingleton()->GetCount())
 					return false;
-				}
 			}
 
 			return true;
 		}
 
 		void __fastcall Start(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc, bool abFastTravel) {
+			WorldState::Pause();
+
 			kState.bLoadingCell = true;
 			kState.bRequestFader = true;
 			kState.bIsFastTravel = abFastTravel;
-			kState.pCurrentDoor = apDoor;
+			kState.pCurrentDoor = nullptr;
+
+			Animation::pCurrentOpenSequence = nullptr;
+
+			if (apDoor && apDoor->IsReference() && apDoor->GetObjectReference()) {
+				TESBoundObject* pBase = apDoor->GetObjectReference();
+				if (pBase->GetFormType() == FORM_TYPE::TESObjectDOOR)
+					kState.pCurrentDoor = apDoor;
+			}
 
 			if (kState.pCurrentDoor) [[likely]] {
 				// We are going to enter a new cell, let's open the current door
@@ -442,6 +476,8 @@ namespace BetterTransitions {
 
 		bool __fastcall Finish(PlayerCharacter* apPlayer) {
 			Tasks::Finish();
+			
+			FaderManager::GetSingleton()->RemoveFader(FADER_TYPE_ABOVE_MENU, false);
 
 			TESObjectREFR* pTargetDoor = nullptr;
 
@@ -513,12 +549,6 @@ namespace BetterTransitions {
 		}
 	}
 
-
-	void OnRequest(TESObjectREFR* apDoor, PlayerCharacter::PositionRequest* apTargetLoc, bool abFastTravel) {
-		WorldState::Pause();
-		CellLoadState::Start(apDoor, apTargetLoc, abFastTravel);
-	}
-
 	class Hook {
 	public:
 		// Runs on demand
@@ -530,7 +560,7 @@ namespace BetterTransitions {
 			if (pUsedDoor && pUsedDoor == CellLoadState::kState.pCurrentDoor)
 				return;
 
-			OnRequest(pUsedDoor, apTargetLoc, INDEX == 0);
+			CellLoadState::Start(pUsedDoor, apTargetLoc, INDEX == 0);
 
 			ThisCall(kOrgRequestPositionPlayer[INDEX].GetOverwrittenAddr(), this, apTargetLoc);
 		}
@@ -538,6 +568,13 @@ namespace BetterTransitions {
 		// Runs every frame
 		bool HandlePositionPlayerRequest() {
 			return CellLoadState::Update(reinterpret_cast<PlayerCharacter*>(this));
+		}
+
+		static bool CantBreathe() {
+			if (CellLoadState::kState.bLoadingCell)
+				return true;
+
+			return CdeclCall<bool>(kOrgIsMenuMode.GetOverwrittenAddr());
 		}
 	};
 
@@ -569,5 +606,24 @@ namespace BetterTransitions {
 		kOrgRequestPositionPlayer[0].ReplaceCallEx(0x798A9D, &Hook::RequestPositionPlayer<0>);
 		kOrgRequestPositionPlayer[1].ReplaceCallEx(0x518CA7, &Hook::RequestPositionPlayer<1>);
 		kOrgHandlePositionPlayer.ReplaceCallEx(0x86F94F, &Hook::HandlePositionPlayerRequest);
+	}
+
+	bool bHooked = false;
+	void MessageHandler(NVSEMessagingInterface::Message* apMsg) {
+		if (bHooked) [[likely]]
+			return;
+
+		switch (apMsg->type) {
+			case NVSEMessagingInterface::kMessage_MainGameLoop:
+				kOrgIsMenuMode.ReplaceCall(0x8898BD, Hook::CantBreathe);
+				bHooked = true;
+				break;
+		}
+	}
+
+	void InitMessageHandler(NVSEInterface* apNVSE) {
+		uint32_t uiPluginHandle = apNVSE->GetPluginHandle();
+		NVSEMessagingInterface* pMessaging = static_cast<NVSEMessagingInterface*>(apNVSE->QueryInterface(kInterface_Messaging));
+		pMessaging->RegisterListener(uiPluginHandle, "NVSE", MessageHandler);
 	}
 }

@@ -1,101 +1,135 @@
 #pragma once
+#include <cstdint>
+#include <type_traits>
+#include <bit>
 
-#include <intrin.h>
+#if defined(_MSC_VER)
+#	include <intrin.h>
+#else
+inline bool _bittest(const long* base, long bit) { return (*base & (1L << bit)) != 0; }
+inline bool _bittestandset(long* base, long bit) { bool b = _bittest(base, bit); *base |= (1L << bit); return b; }
+inline bool _bittestandreset(long* base, long bit) { bool b = _bittest(base, bit); *base &= ~(1L << bit); return b; }
+#endif
 
 template <typename T>
-class BitfieldBase {
+struct ScalarWrapper { 
+private:
+	T tField; 
+};
+
+template <typename TYPE, typename STRUCT>
+class BitfieldBase :
+	public std::conditional_t<std::is_scalar_v<STRUCT>, ScalarWrapper<STRUCT>, STRUCT>
+{
 public:
-	BitfieldBase() { tField = 0; }
-	~BitfieldBase() { }
-
-	T		tField;
-
-	void	Clear() { tField = 0; }
-	void	RawSet(T data) { tField = data; }
-
-	void	Set(T data) { tField |= data; }
-	void	Clear(T data) { tField &= ~data; }
-	void	Unset(T data) { Clear(data); }
-	void	Mask(T data) { tField &= data; }
-	void	Toggle(T data) { tField ^= data; }
-	void	SetBit(T data, bool state)
-	{
-		if (state) Set(data); else Clear(data);
+	TYPE& GetField() {
+		return *reinterpret_cast<TYPE*>(this);
 	}
 
-	void	SetField(T data, T mask, T pos) {
-		tField = (tField & ~mask) | (data << pos);
+	const TYPE& GetField() const {
+		return *reinterpret_cast<const TYPE*>(this);
 	}
 
-	T		GetField(T mask, T pos) const {
-		return (tField & mask) >> pos;
+	BitfieldBase() { Clear(); }
+	BitfieldBase(TYPE data) { Write(data); }
+
+	void Write(TYPE data) { GetField() = data; }
+
+	void Clear() { Write(0); }
+	void Clear(TYPE data) { GetField() &= ~data; }
+
+	void Mask(TYPE data) { GetField() &= data; }
+	void Toggle(TYPE data) { GetField() ^= data; }
+
+	void Set(TYPE data) { GetField() |= data; }
+	void Set(TYPE data, bool state) { state ? Set(data) : Clear(data); }
+	void Set(TYPE data, TYPE mask, TYPE pos) { GetField() = (GetField() & ~mask) | (data << pos); }
+
+	TYPE Get() const { return GetField(); }
+	TYPE Get(TYPE data) const { return GetField() & data; }
+	TYPE Get(TYPE mask, TYPE pos) const { return (GetField() & mask) >> pos; }
+
+	bool GetBit(uint32_t bit) const {
+		if constexpr (sizeof(TYPE) == 4)
+			return _bittest(reinterpret_cast<const long*>(this), bit);
+		else
+			return (GetField() & (TYPE(1) << bit)) != 0;
 	}
 
-	bool	Test(uint32_t bit) const {
-		if constexpr (sizeof(T) == 4) {
-			return _bittest((const long*)&tField, bit);
-		}
+	bool GetAndSetBit(uint32_t bit) {
+		if constexpr (sizeof(TYPE) == 4)
+			return _bittestandset(reinterpret_cast<long*>(this), bit);
 		else {
-			return (tField & (T(1) << bit)) != 0;
-		}
-	}
-
-	bool	TestSet(uint32_t bit) {
-		if constexpr (sizeof(T) == 4) {
-			return _bittestandset((long*)&tField, bit);
-		}
-		else {
-			T mask = T(1) << bit;
-			bool bVal = (tField & mask) != 0;
-			tField ^= mask;
+			TYPE mask = TYPE(1) << bit;
+			bool bVal = (GetField() & mask) != 0;
+			GetField() |= mask;
 			return bVal;
 		}
 	}
 
-	bool	TestClear(uint32_t bit) {
-		if constexpr (sizeof(T) == 4) {
-			return _bittestandreset((long*)&tField, bit);
-		}
+	bool GetAndClearBit(uint32_t bit) {
+		if constexpr (sizeof(TYPE) == 4)
+			return _bittestandreset(reinterpret_cast<long*>(this), bit);
 		else {
-			T mask = T(1) << bit;
-			bool bVal = (tField & mask) != 0;
-			tField &= ~mask;
+			TYPE mask = TYPE(1) << bit;
+			bool bVal = (GetField() & mask) != 0;
+			GetField() &= ~mask;
 			return bVal;
 		}
 	}
 
-	T		Get(void) const { return tField; }
-	T		GetBit(T data) const { return tField & data; }
-	T		Extract(uint32_t bit) const { return (tField >> bit) & 1; }
-	T		ExtractField(uint32_t shift, uint32_t length)
-	{
-		return (tField >> shift) & (0xFFFFFFFF >> (32 - length));
+	bool IsSet(TYPE data) const { return Get(data) != TYPE(0); }
+	bool IsClear(TYPE data) const { return Get(data) == TYPE(0); }
+
+	TYPE RotL(uint32_t auiAmount) {
+		return std::rotl(GetField(), auiAmount);
 	}
 
-	bool	IsSet(T data) const { return GetBit(data) != 0; }
-	bool	IsUnSet(T data) const { return GetBit(data) == 0; }
-	bool	IsClear(T data) const { return IsUnSet(data); }
+	TYPE RotR(uint32_t auiAmount) {
+		return std::rotr(GetField(), auiAmount);
+	}
+
+	uint32_t PopCount() const {
+		return std::popcount(GetField());
+	}
+
+	operator TYPE&() {
+		return GetField();
+	}
+
+	operator const TYPE&() const {
+		return GetField();
+	}
+
+	void operator=(TYPE data) {
+		GetField() = data;
+	}
+
+	void operator|=(TYPE data) {
+		Set(data);
+	}
+
+	void operator&=(TYPE data) {
+		Mask(data);
+	}
+
+	void operator^=(TYPE data) {
+		Toggle(data);
+	}
 };
 
 template <typename STRUCT>
-class Bitfield : public BitfieldBase<
-	typename std::conditional<sizeof(STRUCT) == 1, uint8_t,
-	typename std::conditional<sizeof(STRUCT) == 2, uint16_t,
-	typename std::conditional<sizeof(STRUCT) == 4, uint32_t, void>::type>::type>::type> 
-{
-public:
-	Bitfield() {};
-	~Bitfield() {};
+using Bitfield = BitfieldBase<
+	std::conditional_t<
+	sizeof(STRUCT) == 1, uint8_t,
+	std::conditional_t<
+	sizeof(STRUCT) == 2, uint16_t,
+	std::conditional_t<sizeof(STRUCT) == 4, uint32_t, void>
+	>
+	>,
+	STRUCT
+>;
 
-	const STRUCT& operator()() const {
-		return *reinterpret_cast<const STRUCT*>(this);
-	}
-
-	STRUCT& operator()() {
-		return *reinterpret_cast<STRUCT*>(this);
-	}
-};
-
-typedef Bitfield<uint8_t>	Bitfield8;
-typedef Bitfield<uint16_t>	Bitfield16;
-typedef Bitfield<uint32_t>	Bitfield32;	
+using Bitfield8		= Bitfield<uint8_t>;
+using Bitfield16	= Bitfield<uint16_t>;
+using Bitfield32	= Bitfield<uint32_t>;

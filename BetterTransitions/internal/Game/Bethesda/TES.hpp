@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IOTask.hpp"
-#include "BSString.hpp"
+#include "BSStringT.hpp"
 #include "BSSimpleList.hpp"
 #include "Gamebryo/NiPoint3.hpp"
 #include "Gamebryo/NiSmartPointer.hpp"

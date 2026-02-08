@@ -106,6 +106,9 @@
     <ClCompile Include="..\shared\BSMemory\BSMemory.cpp">
       <Filter>shared\BSMemory</Filter>
     </ClCompile>
+    <ClCompile Include="internal\Game\Bethesda\TESForm.cpp">
+      <Filter>internal\Game\Bethesda</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\Defines.hpp">
@@ -203,6 +206,9 @@
     </ClInclude>
     <ClInclude Include="..\shared\BSMemory\BSMemory.hpp">
       <Filter>shared\BSMemory</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\Game\Bethesda\TESForm.hpp">
+      <Filter>internal\Game\Bethesda</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
